@@ -1,0 +1,24 @@
+import { Routes, Route, Navigate } from "react-router-dom";
+
+function Placeholder({ title }) {
+  return (
+    <div className="min-h-screen grid place-items-center bg-black">
+  <h1 className="text-white text-5xl font-black rotate-2">
+    {title}
+  </h1>
+</div>
+  );
+}
+
+export default function AppRouter() {
+  return (
+    <Routes>
+      <Route path="/" element={<Placeholder title="Onboarding Overview" />} />
+      <Route path="/programs/new" element={<Placeholder title="Create Program" />} />
+      <Route path="/programs/:id/material" element={<Placeholder title="Upload Material" />} />
+      <Route path="/programs/:id/checklist" element={<Placeholder title="Checklist Builder" />} />
+      <Route path="/assignments" element={<Placeholder title="Assign Program" />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
