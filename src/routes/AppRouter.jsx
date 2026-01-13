@@ -1,23 +1,85 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import DashboardLayout from "../components/layouts/DashboardLayout";
+import OnboardingOverview from "../pages/OnboardingOverview";
 
 function Placeholder({ title }) {
   return (
-    <div className="min-h-screen grid place-items-center bg-black">
-  <h1 className="text-white text-5xl font-black rotate-2">
-    {title}
-  </h1>
-</div>
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
+    </div>
   );
+}
+
+function WithLayout({ children }) {
+  return <DashboardLayout>{children}</DashboardLayout>;
 }
 
 export default function AppRouter() {
   return (
     <Routes>
-      <Route path="/" element={<Placeholder title="Onboarding Overview" />} />
-      <Route path="/programs/new" element={<Placeholder title="Create Program" />} />
-      <Route path="/programs/:id/material" element={<Placeholder title="Upload Material" />} />
-      <Route path="/programs/:id/checklist" element={<Placeholder title="Checklist Builder" />} />
-      <Route path="/assignments" element={<Placeholder title="Assign Program" />} />
+      <Route
+        path="/"
+        element={
+          <WithLayout>
+            <OnboardingOverview />
+          </WithLayout>
+        }
+      />
+
+      <Route
+        path="/onboarding"
+        element={
+          <WithLayout>
+            <OnboardingOverview />
+          </WithLayout>
+        }
+      />
+
+      <Route
+        path="/employees"
+        element={
+          <WithLayout>
+            <Placeholder title="Employees" />
+          </WithLayout>
+        }
+      />
+
+      <Route
+        path="/programs/new"
+        element={
+          <WithLayout>
+            <Placeholder title="Create Program" />
+          </WithLayout>
+        }
+      />
+
+      <Route
+        path="/programs/:id/material"
+        element={
+          <WithLayout>
+            <Placeholder title="Upload Material" />
+          </WithLayout>
+        }
+      />
+
+      <Route
+        path="/programs/:id/checklist"
+        element={
+          <WithLayout>
+            <Placeholder title="Checklist Builder" />
+          </WithLayout>
+        }
+      />
+
+      <Route
+        path="/assignments"
+        element={
+          <WithLayout>
+            <Placeholder title="Assign Program" />
+          </WithLayout>
+        }
+      />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
