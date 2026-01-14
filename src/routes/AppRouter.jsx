@@ -1,4 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import MainLayout from "../components/layout/MainLayout.jsx";
+import UploadMaterial from "../pages/UploadMaterial.jsx";
 
 function Placeholder({ title }) {
   return (
@@ -12,13 +14,15 @@ function Placeholder({ title }) {
 
 export default function AppRouter() {
   return (
+    <MainLayout>
     <Routes>
       <Route path="/" element={<Placeholder title="Onboarding Overview" />} />
       <Route path="/programs/new" element={<Placeholder title="Create Program" />} />
-      <Route path="/programs/:id/material" element={<Placeholder title="Upload Material" />} />
+      <Route path="/programs/:id/material" element={ <UploadMaterial /> } />
       <Route path="/programs/:id/checklist" element={<Placeholder title="Checklist Builder" />} />
       <Route path="/assignments" element={<Placeholder title="Assign Program" />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </MainLayout>
   );
 }
