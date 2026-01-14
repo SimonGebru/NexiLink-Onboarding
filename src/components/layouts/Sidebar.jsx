@@ -59,7 +59,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 shrink-0 border-r border-slate-200 bg-white p-4 flex-col">
+      <aside className="hidden md:flex md:w-64 md:flex-col border-r bg-white p-4 h-full">
         <div className="flex items-center gap-3 px-2 py-2">
           <div className="h-9 w-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold shadow-sm">
             N

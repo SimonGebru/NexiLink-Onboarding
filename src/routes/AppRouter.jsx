@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import DashboardLayout from "../components/layouts/DashboardLayout";
 import OnboardingOverview from "../pages/OnboardingOverview";
+import CreateProgram from "../pages/CreateProgram";
 
 function Placeholder({ title }) {
   return (
@@ -48,7 +49,7 @@ export default function AppRouter() {
         path="/programs/new"
         element={
           <WithLayout>
-            <Placeholder title="Create Program" />
+            <CreateProgram />
           </WithLayout>
         }
       />
