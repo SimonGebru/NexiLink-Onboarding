@@ -1,5 +1,6 @@
 import { Bell, Menu } from "lucide-react";
 
+
 export default function Topbar({ onOpenMobile }) {
   return (
     <header className="sticky top-0 z-20 h-14 border-b border-slate-200 bg-white/80 backdrop-blur">
