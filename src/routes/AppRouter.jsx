@@ -1,4 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import MainLayout from "../components/layout/MainLayout.jsx";
+import UploadMaterial from "../pages/UploadMaterial.jsx";
+import ChecklistBuilder from "../pages/ChecklistBuilder.jsx";
 import DashboardLayout from "../components/layouts/DashboardLayout";
 import OnboardingOverview from "../pages/OnboardingOverview";
 import CreateProgram from "../pages/CreateProgram";
@@ -17,7 +20,13 @@ function WithLayout({ children }) {
 
 export default function AppRouter() {
   return (
+    <MainLayout>
     <Routes>
+      <Route path="/" element={<Placeholder title="Onboarding Overview" />} />
+      <Route path="/programs/new" element={<Placeholder title="Create Program" />} />
+      <Route path="/programs/:id/material" element={ <UploadMaterial /> } />
+      <Route path="/programs/:id/checklist" element={ <ChecklistBuilder /> } />
+      <Route path="/assignments" element={<Placeholder title="Assign Program" />} />
       <Route
         path="/"
         element={
@@ -83,5 +92,6 @@ export default function AppRouter() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </MainLayout>
   );
 }
