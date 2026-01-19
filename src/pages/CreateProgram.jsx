@@ -203,7 +203,7 @@ export default function CreateProgram() {
           aria-modal="true"
           role="dialog"
         >
-          {/* overlay: mörk + blur */}
+          
           <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={closeUploadModal}
@@ -243,7 +243,7 @@ export default function CreateProgram() {
                   Dra och släpp filer eller använd knapparna nedan för att ladda upp.
                 </p>
 
-                {/* Drag-drop area (UI). Vi kopplar den till file picker vid klick */}
+                
                 <button
                   type="button"
                   onClick={onChooseFilesClick}

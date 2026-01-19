@@ -1,6 +1,10 @@
 import { NavLink } from "react-router-dom";
 import { LayoutDashboard, ClipboardList, Users, X } from "lucide-react";
 
+// Logo assets
+import NexilinkText from "../../assets/Nexilink.png";
+import NexilinkIcon from "../../assets/log.png";
+
 const base =
   "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors";
 
@@ -15,34 +19,21 @@ const getLinkClass = ({ isActive }) =>
 function NavItems({ onNavigate }) {
   return (
     <nav className="mt-6 space-y-2">
-      <NavLink
-        to="/"
-        end
-        className={getLinkClass}
-        onClick={onNavigate}
-      >
+      <NavLink to="/" end className={getLinkClass} onClick={onNavigate}>
         <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-200 group-hover:bg-white transition-colors">
           <LayoutDashboard className="h-4 w-4" />
         </div>
         <span>Dashboard</span>
       </NavLink>
 
-      <NavLink
-        to="/onboarding"
-        className={getLinkClass}
-        onClick={onNavigate}
-      >
+      <NavLink to="/onboarding" className={getLinkClass} onClick={onNavigate}>
         <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-200 group-hover:bg-white transition-colors">
           <ClipboardList className="h-4 w-4" />
         </div>
         <span>Onboarding</span>
       </NavLink>
 
-      <NavLink
-        to="/employees"
-        className={getLinkClass}
-        onClick={onNavigate}
-      >
+      <NavLink to="/employees" className={getLinkClass} onClick={onNavigate}>
         <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-200 group-hover:bg-white transition-colors">
           <Users className="h-4 w-4" />
         </div>
@@ -53,29 +44,33 @@ function NavItems({ onNavigate }) {
 }
 
 export default function Sidebar({ mobileOpen, onCloseMobile }) {
-  // När man klickar på en länk i mobilmenyn vill vi stänga menyn direkt
   const handleNavigateMobile = () => onCloseMobile?.();
 
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:w-64 md:flex-col border-r bg-white p-4 h-full">
+      <aside className="hidden md:flex md:w-64 shrink-0 md:flex-col border-r bg-white p-4 self-stretch min-h-0">
+        {/* Brand header */}
         <div className="flex items-center gap-3 px-2 py-2">
-          <div className="h-9 w-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold shadow-sm">
-            N
-          </div>
+          <img
+            src={NexilinkIcon}
+            alt="Nexilink icon"
+            className="h-9 w-9 rounded-lg object-contain"
+          />
+
           <div className="leading-tight">
-            <div className="font-semibold text-slate-900">Nexilink</div>
+            <img
+              src={NexilinkText}
+              alt="Nexilink"
+              className="h-4 w-auto mb-0.5"
+            />
             <div className="text-xs text-slate-500">Onboarding</div>
           </div>
         </div>
 
-        <NavItems />
-
-        <div className="mt-auto pt-6 px-2">
-          <div className="text-xs text-slate-400">
-            © {new Date().getFullYear()} Nexilink
-          </div>
+        {/* Nav area (kan scrolla om den blir lång) */}
+        <div className="flex-1 overflow-y-auto pr-1">
+          <NavItems />
         </div>
       </aside>
 
@@ -83,12 +78,14 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
       <div
         className={[
           "fixed inset-0 z-40 bg-black/40 transition-opacity md:hidden",
-          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+          mobileOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none",
         ].join(" ")}
         onClick={onCloseMobile}
       />
 
-      {/*  Mobile drawer */}
+      {/* Mobile drawer */}
       <aside
         className={[
           "fixed z-50 inset-y-0 left-0 w-80 max-w-[85vw] bg-white border-r border-slate-200 md:hidden",
@@ -99,11 +96,18 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
         {/* Mobile header */}
         <div className="h-14 border-b border-slate-200 px-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold shadow-sm">
-              N
-            </div>
+            <img
+              src={NexilinkIcon}
+              alt="Nexilink icon"
+              className="h-9 w-9 rounded-lg object-contain"
+            />
+
             <div className="leading-tight">
-              <div className="font-semibold text-slate-900">Nexilink</div>
+              <img
+                src={NexilinkText}
+                alt="Nexilink"
+                className="h-4 w-auto mb-0.5"
+              />
               <div className="text-xs text-slate-500">Onboarding</div>
             </div>
           </div>
@@ -117,12 +121,9 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
           </button>
         </div>
 
-        <div className="p-4">
+        {/* Mobile nav (scroll om lång) */}
+        <div className="p-4 h-[calc(100%-3.5rem)] overflow-y-auto">
           <NavItems onNavigate={handleNavigateMobile} />
-
-          <div className="mt-8 text-xs text-slate-400 px-2">
-            © {new Date().getFullYear()} Nexilink
-          </div>
         </div>
       </aside>
     </>
