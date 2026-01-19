@@ -20,6 +20,7 @@ function ProgressBar({ value = 0 }) {
         <div className="text-sm font-medium text-slate-900">
           Procent klar: {safe}%
         </div>
+        <div className="text-xs text-slate-500">Senast uppdaterad: idag</div>
       </div>
 
       <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden">
@@ -141,6 +142,8 @@ export default function AssignOnboarding() {
     },
   ];
 
+  const canStart = Boolean(selectedEmployee && selectedProgram && startDate);
+
   return (
     <div className="w-full space-y-6">
       {/* Page title */}
@@ -148,7 +151,15 @@ export default function AssignOnboarding() {
         <h1 className="text-2xl font-bold text-slate-900">
           Tilldela Onboarding & Nyanställd Översikt
         </h1>
-        <p className="text-slate-500">Starta ett nytt onboardingflöde för en anställd.</p>
+        <p className="text-slate-500">
+          Starta ett nytt onboardingflöde för en anställd.
+        </p>
+
+        <div className="text-sm text-slate-600">
+          <span className="font-medium text-slate-900">Val:</span>{" "}
+          {selectedEmployee || "—"} • {selectedProgram || "—"} •{" "}
+          {startDate || "—"}
+        </div>
       </div>
 
       {/* Two columns */}
@@ -207,13 +218,22 @@ export default function AssignOnboarding() {
             </FormField>
 
             <div className="pt-2">
-              <Button className="h-12 w-full bg-[#1A4D4F] hover:bg-[#1A4D4F]/90 text-base">
+              <Button
+                disabled={!canStart}
+                className={[
+                  "h-12 w-full text-base",
+                  canStart
+                    ? "bg-[#1A4D4F] hover:bg-[#1A4D4F]/90"
+                    : "bg-slate-200 text-slate-500 cursor-not-allowed",
+                ].join(" ")}
+              >
                 Starta
               </Button>
 
               <p className="mt-3 text-xs text-slate-500">
-                Systemet skapar EmployeeOnboarding-status och kopierar checklistan
-                till individens instans.
+                {canStart
+                  ? "Systemet skapar EmployeeOnboarding-status och kopierar checklistan till individens instans."
+                  : "Välj nyanställd, program och startdatum för att kunna starta onboarding."}
               </p>
             </div>
           </CardContent>
@@ -232,19 +252,32 @@ export default function AssignOnboarding() {
             </CardHeader>
 
             <CardContent className="space-y-5">
-              <ProgressBar value={progress} />
+              {selectedEmployee ? (
+                <>
+                  <ProgressBar value={progress} />
 
-              <div className="space-y-4">
-                {overviewCards.map((c) => (
-                  <TaskCard
-                    key={c.title}
-                    title={c.title}
-                    items={c.items}
-                    status={c.status}
-                    notePlaceholder={c.notePlaceholder}
-                  />
-                ))}
-              </div>
+                  <div className="space-y-4">
+                    {overviewCards.map((c) => (
+                      <TaskCard
+                        key={c.title}
+                        title={c.title}
+                        items={c.items}
+                        status={c.status}
+                        notePlaceholder={c.notePlaceholder}
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6">
+                  <div className="text-sm font-semibold text-slate-900">
+                    Ingen översikt ännu
+                  </div>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Välj en anställd till vänster för att se status, material och kommentarer.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

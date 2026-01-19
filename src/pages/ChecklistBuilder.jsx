@@ -1,6 +1,8 @@
 import { BadgeCheck, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function ChecklistBuilder() {
+  const navigate = useNavigate();
   const tasks = [
     { id: 1, title: "Läs igenom anställningsavtalet" },
     { id: 2, title: "Ställ in din e-post och kalender" },
@@ -120,9 +122,12 @@ export default function ChecklistBuilder() {
             Avbryt
           </button>
 
-          <button className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors">
-            Spara checklista
-          </button>
+          <button
+  onClick={() => navigate("/onboarding/assign")}
+  className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors"
+>
+  Spara checklista
+</button>
         </div>
       </section>
     </div>

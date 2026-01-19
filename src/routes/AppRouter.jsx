@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-
+import DashboardHome from "../pages/DashboardHome";
 import UploadMaterial from "../pages/UploadMaterial.jsx";
 import ChecklistBuilder from "../pages/ChecklistBuilder.jsx";
 import DashboardLayout from "../components/layouts/DashboardLayout";
@@ -22,64 +22,43 @@ function WithLayout({ children }) {
 export default function AppRouter() {
   return (
     <WithLayout>
-    <Routes>
-
-      <Route
-        path="/"
-        element={
-          
-            <OnboardingOverview />
-          
-        }
-      />
-      <Route
-        path="/onboarding"
-        element={
-          
-            <OnboardingOverview />
-          
-        }
-      />
-
-      <Route
-        path="/employees"
-        element={
-          
-            <Placeholder title="Employees" />
-          
-        }
-      />
-
-      <Route
-        path="/programs/new"
-        element={
-          
-            <CreateProgram />
-          
-        }
-      />
-
-      <Route
-        path="/programs/:id/material"
-        element={ 
+      <Routes>
         
-          <UploadMaterial />
-         }
-      />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-      <Route
-        path="/programs/:id/checklist"
-        element={ 
         
-          <ChecklistBuilder />
+        <Route path="/dashboard" element={<DashboardHome />} />
+
         
-        }
-      />
+        <Route path="/onboarding" element={<OnboardingOverview />} />
 
-      <Route path="/onboarding/assign" element={<AssignOnboarding />} />
+        
+        <Route
+          path="/employees"
+          element={<Placeholder title="Employees" />}
+        />
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        
+        <Route path="/programs/new" element={<CreateProgram />} />
+
+        
+        <Route
+          path="/programs/:id/material"
+          element={<UploadMaterial />}
+        />
+
+        
+        <Route
+          path="/programs/:id/checklist"
+          element={<ChecklistBuilder />}
+        />
+
+        
+        <Route path="/onboarding/assign" element={<AssignOnboarding />} />
+
+      
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
     </WithLayout>
   );
 }
