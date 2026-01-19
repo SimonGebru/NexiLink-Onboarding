@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "../components/layout/MainLayout.jsx";
 import UploadMaterial from "../pages/UploadMaterial.jsx";
+import ChecklistBuilder from "../pages/ChecklistBuilder.jsx";
 
 function Placeholder({ title }) {
   return (
@@ -19,7 +20,7 @@ export default function AppRouter() {
       <Route path="/" element={<Placeholder title="Onboarding Overview" />} />
       <Route path="/programs/new" element={<Placeholder title="Create Program" />} />
       <Route path="/programs/:id/material" element={ <UploadMaterial /> } />
-      <Route path="/programs/:id/checklist" element={<Placeholder title="Checklist Builder" />} />
+      <Route path="/programs/:id/checklist" element={ <ChecklistBuilder /> } />
       <Route path="/assignments" element={<Placeholder title="Assign Program" />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

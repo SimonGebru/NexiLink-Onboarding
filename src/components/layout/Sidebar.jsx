@@ -11,7 +11,7 @@ export default function Sidebar() {
   const navItems = [
     { name: "Dashboard", path: "/", Icon: LayoutDashboard },
     { name: "Onboarding", path: "/programs/:id/material", Icon: Briefcase },
-    { name: "Employees", path: "/employees", Icon: Users },
+    { name: "Employees", path: "/programs/:id/checklist", Icon: Users },
   ];
 
   return (
