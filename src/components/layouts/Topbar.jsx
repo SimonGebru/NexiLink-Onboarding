@@ -48,7 +48,6 @@ export default function Topbar({ onOpenMobile }) {
                 Simon
               </span>
               <span className="text-xs text-slate-500">
-                Admin
               </span>
             </div>
 

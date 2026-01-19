@@ -5,6 +5,7 @@ import ChecklistBuilder from "../pages/ChecklistBuilder.jsx";
 import DashboardLayout from "../components/layouts/DashboardLayout";
 import OnboardingOverview from "../pages/OnboardingOverview";
 import CreateProgram from "../pages/CreateProgram";
+import AssignOnboarding from "../pages/AssignOnboarding";
 
 function Placeholder({ title }) {
   return (
@@ -75,14 +76,7 @@ export default function AppRouter() {
         }
       />
 
-      <Route
-        path="/assignments"
-        element={
-          
-            <Placeholder title="Assign Program" />
-          
-        }
-      />
+      <Route path="/onboarding/assign" element={<AssignOnboarding />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

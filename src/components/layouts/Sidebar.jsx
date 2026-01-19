@@ -1,5 +1,11 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, ClipboardList, Users, X } from "lucide-react";
+import {
+  LayoutDashboard,
+  ClipboardList,
+  Users,
+  X,
+  Settings,
+} from "lucide-react";
 
 // Logo assets
 import NexilinkText from "../../assets/Nexilink.png";
@@ -43,6 +49,30 @@ function NavItems({ onNavigate }) {
   );
 }
 
+function SettingsLink({ onNavigate }) {
+  return (
+    <div className="pt-4">
+      <NavLink
+        to="/settings"
+        className={({ isActive }) =>
+          [
+            base,
+            isActive
+              ? "bg-slate-100 text-slate-900 font-medium border border-slate-200"
+              : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+          ].join(" ")
+        }
+        onClick={onNavigate}
+      >
+        <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-200 group-hover:bg-white transition-colors">
+          <Settings className="h-4 w-4" />
+        </div>
+        <span>Inställningar</span>
+      </NavLink>
+    </div>
+  );
+}
+
 export default function Sidebar({ mobileOpen, onCloseMobile }) {
   const handleNavigateMobile = () => onCloseMobile?.();
 
@@ -50,27 +80,35 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-64 shrink-0 md:flex-col border-r bg-white p-4 self-stretch min-h-0">
-        {/* Brand header */}
-        <div className="flex items-center gap-3 px-2 py-2">
-          <img
-            src={NexilinkIcon}
-            alt="Nexilink icon"
-            className="h-9 w-9 rounded-lg object-contain"
-          />
-
-          <div className="leading-tight">
+        {/* 👇 Viktigt: gör hela sidebaren till en kolumn som fyller höjden */}
+        <div className="flex flex-col h-full min-h-0">
+          {/* Brand header */}
+          <div className="flex items-center gap-3 px-2 py-2">
             <img
-              src={NexilinkText}
-              alt="Nexilink"
-              className="h-4 w-auto mb-0.5"
+              src={NexilinkIcon}
+              alt="Nexilink icon"
+              className="h-9 w-9 rounded-lg object-contain"
             />
-            <div className="text-xs text-slate-500">Onboarding</div>
-          </div>
-        </div>
 
-        {/* Nav area (kan scrolla om den blir lång) */}
-        <div className="flex-1 overflow-y-auto pr-1">
-          <NavItems />
+            <div className="leading-tight">
+              <img
+                src={NexilinkText}
+                alt="Nexilink"
+                className="h-4 w-auto mb-0.5"
+              />
+              <div className="text-xs text-slate-500">Onboarding</div>
+            </div>
+          </div>
+
+          {/* Nav area (kan scrolla) */}
+          <div className="flex-1 overflow-y-auto pr-1 min-h-0">
+            <NavItems />
+          </div>
+
+          {/* Settings längst ner */}
+          <div className="mt-auto px-2">
+            <SettingsLink />
+          </div>
         </div>
       </aside>
 
@@ -121,9 +159,15 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
           </button>
         </div>
 
-        {/* Mobile nav (scroll om lång) */}
-        <div className="p-4 h-[calc(100%-3.5rem)] overflow-y-auto">
-          <NavItems onNavigate={handleNavigateMobile} />
+        {/* Mobile nav + settings längst ner */}
+        <div className="p-4 h-[calc(100%-3.5rem)] min-h-0 flex flex-col">
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <NavItems onNavigate={handleNavigateMobile} />
+          </div>
+
+          <div className="mt-auto">
+            <SettingsLink onNavigate={handleNavigateMobile} />
+          </div>
         </div>
       </aside>
     </>
