@@ -6,6 +6,7 @@ import {
   Trash2,
   File,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function UploadMaterial() {
   const [materials, setMaterials] = useState([
@@ -214,9 +215,11 @@ export default function UploadMaterial() {
         <button className="px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
           Avbryt
         </button>
+        <Link to="/programs/:id/checklist">
         <button className="px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm">
           Fortsätt till checklistbyggaren
         </button>
+        </Link>
       </div>
     </div>
   );
