@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useMemo, useRef, useState } from "react";
 
 import {
@@ -11,8 +11,9 @@ import {
 import Button from "../components/ui/Button";
 import { FormField, Input, Select, Textarea } from "../components/ui/Form";
 
-
 import { CloudUpload, FileText, Link as LinkIcon, X } from "lucide-react";
+
+import { createProgram } from "../services/programService";
 
 export default function CreateProgram() {
   const navigate = useNavigate();
@@ -43,10 +44,23 @@ export default function CreateProgram() {
     []
   );
 
-  // Modal state
+  // ===== FORM STATE (NYTT) =====
+  const [title, setTitle] = useState("");
+  const [unit, setUnit] = useState("");
+  const [role, setRole] = useState("");
+  const [description, setDescription] = useState("");
+  const [responsible, setResponsible] = useState("");
+
+  // Feedback state
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  // När vi väl skapat programmet vill vi komma ihåg id:t
+  const [createdProgramId, setCreatedProgramId] = useState(null);
+
+  // ===== MODAL STATE (som du hade) =====
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
-  
   const [selectedFiles, setSelectedFiles] = useState([]);
   const fileInputRef = useRef(null);
 
@@ -66,9 +80,7 @@ export default function CreateProgram() {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    
     setSelectedFiles((prev) => {
-      
       const existingKey = new Set(prev.map((f) => `${f.name}-${f.size}`));
       const next = [...prev];
       for (const f of files) {
@@ -78,7 +90,6 @@ export default function CreateProgram() {
       return next;
     });
 
-    
     e.target.value = "";
   }
 
@@ -86,10 +97,69 @@ export default function CreateProgram() {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function handleUploadAndContinue() {
-    // Här hade vi gjort upload till storage + sparat metadata i DB.
-    // Just nu: simulera "klart" och gå vidare till nästa sida 
-    navigate("/programs/demo/material");
+  // ===== NYTT: skapar program i backend =====
+  async function handleCreateProgram() {
+    setError("");
+
+    if (!title.trim()) {
+      setError("Programnamn måste fyllas i.");
+      return null;
+    }
+
+    try {
+      setSaving(true);
+
+      // Payload: skicka bara det som finns
+      const payload = {
+  name: title.trim(),
+  unit: unit || undefined,
+  role: role || undefined,
+  description: description.trim() || undefined,
+  responsible: responsible.trim() || undefined,
+};
+
+      const created = await createProgram(payload);
+
+      // Förväntar oss Mongo: created._id
+      const id = created?._id;
+      if (!id) {
+        throw new Error("Backend returnerade inget program-ID.");
+      }
+
+      setCreatedProgramId(id);
+      return id;
+    } catch (err) {
+      const msg = err?.message || "Kunde inte skapa program.";
+
+      // extra tydligt om du inte är admin
+      if (msg.toLowerCase().includes("forbidden") || msg.includes("403")) {
+        setError("Endast admin kan skapa program.");
+      } else {
+        setError(msg);
+      }
+
+      return null;
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Skapa program och gå vidare till material-sidan
+  async function handleCreateAndGoToMaterial() {
+    const id = createdProgramId || (await handleCreateProgram());
+    if (!id) return;
+
+    navigate(`/programs/${id}/material`);
+  }
+
+  // Modal-knapp: skapa (om inte skapad) och fortsätt
+  async function handleUploadAndContinue() {
+    const id = createdProgramId || (await handleCreateProgram());
+    if (!id) return;
+
+    // Själva filuppladdningen gör vi senare.
+    // Nu: bara gå vidare till material-vyn för programmet.
+    navigate(`/programs/${id}/material`);
   }
 
   return (
@@ -114,37 +184,54 @@ export default function CreateProgram() {
         </CardHeader>
 
         <CardContent variant="form" className="space-y-10">
+          {/* Error */}
+          {error ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </div>
+          ) : null}
+
           {/* Program name */}
           <FormField label="Programnamn">
             <Input
               className="h-12 text-base"
               placeholder="T.ex. Ny anställd i marknadsavdelningen"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
             />
           </FormField>
 
           {/* Unit + Role */}
           <div className="grid gap-6 sm:grid-cols-2">
             <FormField label="Enhet">
-              <Select className="h-12 text-base" defaultValue="">
+              <Select
+                className="h-12 text-base"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+              >
                 <option value="" disabled>
                   Välj en enhet
                 </option>
-                {units.map((unit) => (
-                  <option key={unit} value={unit}>
-                    {unit}
+                {units.map((u) => (
+                  <option key={u} value={u}>
+                    {u}
                   </option>
                 ))}
               </Select>
             </FormField>
 
             <FormField label="Roll">
-              <Select className="h-12 text-base" defaultValue="">
+              <Select
+                className="h-12 text-base"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+              >
                 <option value="" disabled>
                   Välj en roll
                 </option>
-                {roles.map((role) => (
-                  <option key={role} value={role}>
-                    {role}
+                {roles.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
                   </option>
                 ))}
               </Select>
@@ -156,22 +243,25 @@ export default function CreateProgram() {
             <Textarea
               className="text-base min-h-[200px]"
               rows={6}
-              placeholder="Ange en kort beskrivning av programmet, t.ex. mål, syfte eller specifika instruktioner för nyanställda."
+              placeholder="Ange en kort beskrivning av programmet..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             />
           </FormField>
 
-          {/* Owner */}
+          {/* Responsible */}
           <FormField label="Ansvarig (valfri)">
             <Input
               className="h-12 text-base"
               placeholder="Namn på ansvarig person eller avdelning"
+              value={responsible}
+              onChange={(e) => setResponsible(e.target.value)}
             />
           </FormField>
 
-          
           <div className="pt-2 border-t border-slate-100" />
 
-          
+          {/* Upload section */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <div className="text-base font-semibold text-slate-900">
@@ -182,14 +272,25 @@ export default function CreateProgram() {
               </p>
             </div>
 
-            
             <button
               type="button"
               onClick={openUploadModal}
-              className="w-full sm:w-auto h-12 sm:h-12 px-7 rounded-xl bg-slate-900 text-white text-base font-medium shadow-sm hover:bg-slate-800 transition-colors"
+              className="w-full sm:w-auto h-12 px-7 rounded-xl bg-slate-900 text-white text-base font-medium shadow-sm hover:bg-slate-800 transition-colors"
             >
               Ladda upp material
             </button>
+          </div>
+
+          {/* Actions (NYTT) */}
+          <div className="pt-2 border-t border-slate-100" />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+            <Button
+              type="button"
+              onClick={handleCreateAndGoToMaterial}
+              disabled={saving}
+            >
+              {saving ? "Skapar..." : "Skapa program"}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -203,13 +304,11 @@ export default function CreateProgram() {
           aria-modal="true"
           role="dialog"
         >
-          
           <div
             className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             onClick={closeUploadModal}
           />
 
-          {/* modal box */}
           <div className="relative w-full max-w-2xl rounded-2xl bg-white shadow-xl border border-slate-200">
             {/* Header */}
             <div className="flex items-start justify-between p-6 border-b border-slate-100">
@@ -234,7 +333,6 @@ export default function CreateProgram() {
 
             {/* Content */}
             <div className="p-6 space-y-5">
-              
               <div>
                 <h3 className="text-base font-semibold text-slate-900 mb-1">
                   Lägg till nya material
@@ -243,7 +341,6 @@ export default function CreateProgram() {
                   Dra och släpp filer eller använd knapparna nedan för att ladda upp.
                 </p>
 
-                
                 <button
                   type="button"
                   onClick={onChooseFilesClick}
@@ -260,17 +357,15 @@ export default function CreateProgram() {
                   </span>
                 </button>
 
-                {/* Hidden input (multi file) */}
                 <input
                   ref={fileInputRef}
                   type="file"
                   multiple
                   className="hidden"
                   onChange={onFilesSelected}
-                   accept=".pdf,.doc,.docx,.ppt,.pptx"
+                  accept=".pdf,.doc,.docx,.ppt,.pptx"
                 />
 
-                {/* Buttons row */}
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex gap-3">
                     <button
@@ -285,7 +380,6 @@ export default function CreateProgram() {
                     <button
                       type="button"
                       className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 bg-white transition-colors"
-                      // Här kan vi senare öppna "lägg till länk"-flow i samma modal
                       onClick={() => alert("Lägg till länk (kommer sen)")}
                     >
                       <LinkIcon size={16} />
@@ -299,22 +393,15 @@ export default function CreateProgram() {
                 </div>
               </div>
 
-              {/* Selected files preview */}
               <div className="rounded-xl border border-slate-200 bg-white">
                 <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-                  <p className="text-sm font-semibold text-slate-900">
-                    Valda filer
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {selectedFiles.length} st
-                  </p>
+                  <p className="text-sm font-semibold text-slate-900">Valda filer</p>
+                  <p className="text-xs text-slate-500">{selectedFiles.length} st</p>
                 </div>
 
                 <div className="p-4">
                   {selectedFiles.length === 0 ? (
-                    <p className="text-sm text-slate-500">
-                      Inga filer valda ännu.
-                    </p>
+                    <p className="text-sm text-slate-500">Inga filer valda ännu.</p>
                   ) : (
                     <ul className="space-y-2">
                       {selectedFiles.map((file, idx) => (
@@ -360,14 +447,10 @@ export default function CreateProgram() {
                 type="button"
                 onClick={handleUploadAndContinue}
                 className="h-11 px-6 rounded-xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={selectedFiles.length === 0}
-                title={
-                  selectedFiles.length === 0
-                    ? "Välj minst en fil för att fortsätta"
-                    : "Ladda upp och fortsätt"
-                }
+                disabled={saving}
+                title="Skapa program och fortsätt"
               >
-                Ladda upp och fortsätt
+                {saving ? "Skapar..." : "Ladda upp och fortsätt"}
               </button>
             </div>
           </div>

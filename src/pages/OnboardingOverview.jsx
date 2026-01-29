@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import Button from "../components/ui/Button";
 import {
   Card,
@@ -9,24 +10,9 @@ import {
 } from "../components/ui/Card";
 import { ChevronRight, Plus } from "lucide-react";
 
-const programs = [
-  {
-    id: "intro",
-    title: "Intro för nyanställd",
-    description: "Standard onboarding för alla nya anställda",
-  },
-  {
-    id: "senior",
-    title: "Senior konsult onboarding",
-    description: "Anpassat program för erfarna konsulter",
-  },
-  {
-    id: "intern",
-    title: "Praktikantprogram sommar 2024",
-    description: "Strukturerad introduktion för sommarpraktikanter",
-  },
-];
+import { apiRequest } from "../services/api";
 
+// MOCK tills onboarding-API är klart
 const activeOnboardings = [
   { id: "a1", name: "Erik Svensson", role: "Säljare", status: "Pågår" },
   { id: "a2", name: "Lena Karlsson", role: "Utvecklare", status: "Ej startad" },
@@ -36,9 +22,9 @@ const activeOnboardings = [
 
 function StatusPill({ status }) {
   const map = {
-    "Pågår": "bg-blue-50 text-blue-700 border-blue-200",
+    Pågår: "bg-blue-50 text-blue-700 border-blue-200",
     "Ej startad": "bg-slate-50 text-slate-700 border-slate-200",
-    "Klar": "bg-green-50 text-green-700 border-green-200",
+    Klar: "bg-green-50 text-green-700 border-green-200",
   };
 
   return (
@@ -68,9 +54,7 @@ function ListRow({ title, subtitle, right }) {
     >
       <div className="min-w-0">
         <div className="font-medium text-slate-900">{title}</div>
-        {subtitle ? (
-          <div className="text-sm text-slate-500">{subtitle}</div>
-        ) : null}
+        {subtitle ? <div className="text-sm text-slate-500">{subtitle}</div> : null}
       </div>
 
       <div className="flex items-center gap-3">
@@ -82,19 +66,70 @@ function ListRow({ title, subtitle, right }) {
 }
 
 export default function OnboardingOverview() {
+  // Programs från backend
+  const [programs, setPrograms] = useState([]);
+  const [loadingPrograms, setLoadingPrograms] = useState(true);
+  const [programError, setProgramError] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+
+    async function loadPrograms() {
+      try {
+        setLoadingPrograms(true);
+        setProgramError("");
+
+        const data = await apiRequest("/api/programs", { method: "GET" });
+
+        if (!alive) return;
+        setPrograms(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (!alive) return;
+
+        // Din backend kastar 404 "No programs found" om listan är tom.
+        // Vi vill tolka det som "tom lista", inte visa error.
+        const msg = err?.message || "";
+        if (msg.toLowerCase().includes("no programs found")) {
+          setPrograms([]);
+          setProgramError("");
+        } else {
+          setProgramError(msg || "Kunde inte hämta program.");
+        }
+      } finally {
+        if (!alive) return;
+        setLoadingPrograms(false);
+      }
+    }
+
+    loadPrograms();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Stats: programTotal baseras på backend-data
   const programTotal = programs.length;
-  const ongoingTotal = activeOnboardings.filter((a) => a.status === "Pågår").length;
-  const doneTotal = activeOnboardings.filter((a) => a.status === "Klar").length;
-  const needsActionTotal = activeOnboardings.filter((a) => a.status === "Ej startad").length;
+
+  // Stats: onboardings är fortfarande mock
+  const ongoingTotal = useMemo(
+    () => activeOnboardings.filter((a) => a.status === "Pågår").length,
+    []
+  );
+  const doneTotal = useMemo(
+    () => activeOnboardings.filter((a) => a.status === "Klar").length,
+    []
+  );
+  const needsActionTotal = useMemo(
+    () => activeOnboardings.filter((a) => a.status === "Ej startad").length,
+    []
+  );
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">
-            Onboarding – Översikt
-          </h1>
+          <h1 className="text-3xl font-bold text-slate-900">Onboarding – Översikt</h1>
           <p className="text-slate-500 mt-1">
             Skapa program, tilldela till anställda och följ status.
           </p>
@@ -119,8 +154,6 @@ export default function OnboardingOverview() {
               Skapa nytt program
             </button>
           </Link>
-
-          
 
           <Link to="/onboarding/assign" className="sm:self-start">
             <button
@@ -181,17 +214,21 @@ export default function OnboardingOverview() {
           </CardHeader>
 
           <CardContent className="space-y-3">
-            {programs.length > 0 ? (
+            {loadingPrograms ? (
+              <div className="text-sm text-slate-500">Laddar program…</div>
+            ) : programError ? (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {programError}
+              </div>
+            ) : programs.length > 0 ? (
               programs.map((p) => (
-                <Link key={p.id} to={`/programs/${p.id}/material`}>
-                  <ListRow title={p.title} subtitle={p.description} right={null} />
+                <Link key={p._id} to={`/programs/${p._id}/material`}>
+                  <ListRow title={p.name} subtitle={p.description} right={null} />
                 </Link>
               ))
             ) : (
               <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6">
-                <div className="text-sm font-semibold text-slate-900">
-                  Inga program ännu
-                </div>
+                <div className="text-sm font-semibold text-slate-900">Inga program ännu</div>
                 <p className="mt-1 text-sm text-slate-600">
                   Skapa ett onboardingprogram för att komma igång.
                 </p>
@@ -215,7 +252,7 @@ export default function OnboardingOverview() {
           </CardContent>
         </Card>
 
-        {/* Active onboardings */}
+        {/* Active onboardings (mock) */}
         <Card>
           <CardHeader>
             <CardTitle>Aktiva onboardings</CardTitle>

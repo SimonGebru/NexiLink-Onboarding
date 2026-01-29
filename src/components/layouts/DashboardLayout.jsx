@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import Footer from "./Footer";
 
-export default function DashboardLayout({ children }) {
+export default function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { pathname } = useLocation();
 
@@ -23,7 +23,6 @@ export default function DashboardLayout({ children }) {
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar onOpenMobile={openMobile} />
 
-          
           <main
             className={[
               "flex-1 min-h-0",
@@ -33,11 +32,10 @@ export default function DashboardLayout({ children }) {
             <div
               className={[
                 "mx-auto w-full max-w-6xl px-4 py-6 sm:px-6",
-                
                 lockMainScroll ? "h-full min-h-0 flex flex-col" : "",
               ].join(" ")}
             >
-              {children}
+              <Outlet />
             </div>
           </main>
         </div>

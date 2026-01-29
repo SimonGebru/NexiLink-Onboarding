@@ -1,17 +1,82 @@
+import { useEffect, useState } from "react";
 import { BadgeCheck, Plus } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+
+import { apiRequest } from "../services/api";
 
 export default function ChecklistBuilder() {
   const navigate = useNavigate();
+  const { id } = useParams(); // programId från URL
+
+  // Program från backend
+  const [program, setProgram] = useState(null);
+  const [loadingProgram, setLoadingProgram] = useState(true);
+  const [programError, setProgramError] = useState("");
+
+  // MOCK tasks tills checklist-backend finns
   const tasks = [
     { id: 1, title: "Läs igenom anställningsavtalet" },
     { id: 2, title: "Ställ in din e-post och kalender" },
   ];
 
+  useEffect(() => {
+    let alive = true;
+
+    async function loadProgram() {
+      try {
+        setLoadingProgram(true);
+        setProgramError("");
+
+        const data = await apiRequest(`/api/programs/${id}`, { method: "GET" });
+
+        if (!alive) return;
+        setProgram(data);
+      } catch (err) {
+        if (!alive) return;
+        setProgramError(err?.message || "Kunde inte hämta programmet.");
+      } finally {
+        if (!alive) return;
+        setLoadingProgram(false);
+      }
+    }
+
+    if (!id) {
+      setProgramError("Saknar program-ID i URL.");
+      setLoadingProgram(false);
+      return;
+    }
+
+    loadProgram();
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+
+  function handleCancel() {
+    // Gå tillbaka till material-sidan för samma program
+    navigate(`/programs/${id}/material`);
+  }
+
+  function handleSaveChecklist() {
+    // Senare: POST/PATCH checklist kopplad till programId
+    // Nu: fortsätt flödet som du redan tänkt: tilldela onboarding
+    navigate("/onboarding/assign");
+  }
+
   return (
     <div className="max-w-5xl mx-auto pb-12">
-      <header className="mb-10">
+      <header className="mb-10 space-y-1">
         <h1 className="font-bold text-2xl">Checklistbyggare</h1>
+
+        {loadingProgram ? (
+          <p className="text-sm text-gray-500">Hämtar program…</p>
+        ) : programError ? (
+          <p className="text-sm text-red-600">{programError}</p>
+        ) : (
+          <p className="text-sm text-gray-600">
+            Program: <span className="font-semibold">{program?.name}</span>
+          </p>
+        )}
       </header>
 
       {/* Confirmation */}
@@ -118,16 +183,19 @@ export default function ChecklistBuilder() {
         </div>
 
         <div className="mt-12 flex items-center justify-end gap-4">
-          <button className="px-4 py-2 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+          <button
+            onClick={handleCancel}
+            className="px-4 py-2 border border-gray-300 rounded text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          >
             Avbryt
           </button>
 
           <button
-  onClick={() => navigate("/onboarding/assign")}
-  className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors"
->
-  Spara checklista
-</button>
+            onClick={handleSaveChecklist}
+            className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors"
+          >
+            Spara checklista
+          </button>
         </div>
       </section>
     </div>

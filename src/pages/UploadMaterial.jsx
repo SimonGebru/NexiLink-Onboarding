@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CloudUpload,
   FileText,
@@ -6,9 +6,20 @@ import {
   Trash2,
   File,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
+
+import { apiRequest } from "../services/api";
 
 export default function UploadMaterial() {
+  const { id } = useParams(); // <-- programId från URL
+  const navigate = useNavigate();
+
+  // Program från backend
+  const [program, setProgram] = useState(null);
+  const [loadingProgram, setLoadingProgram] = useState(true);
+  const [programError, setProgramError] = useState("");
+
+  // MOCK material tills backend-delen är klar
   const [materials, setMaterials] = useState([
     {
       id: 1,
@@ -45,6 +56,45 @@ export default function UploadMaterial() {
     },
   ]);
 
+  // Hämta programmet från backend
+  useEffect(() => {
+    let alive = true;
+
+    async function loadProgram() {
+      try {
+        setLoadingProgram(true);
+        setProgramError("");
+
+        const data = await apiRequest(`/api/programs/${id}`, { method: "GET" });
+
+        if (!alive) return;
+        setProgram(data);
+      } catch (err) {
+        if (!alive) return;
+        setProgramError(err?.message || "Kunde inte hämta programmet.");
+      } finally {
+        if (!alive) return;
+        setLoadingProgram(false);
+      }
+    }
+
+    if (!id) {
+      setProgramError("Saknar program-ID i URL.");
+      setLoadingProgram(false);
+      return;
+    }
+
+    loadProgram();
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+
+  // Enkel “back/cancel”
+  function handleCancel() {
+    navigate("/onboarding");
+  }
+
   return (
     <div className="max-w-5xl mx-auto pb-12">
       {/* Header */}
@@ -52,9 +102,27 @@ export default function UploadMaterial() {
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
           Uppladdning av material
         </h1>
-        <p className="text-gray-500">
-          Ladda upp och hantera filer samt länkar för ditt onboardingprogram.
-        </p>
+
+        {/* Program-info */}
+        {loadingProgram ? (
+          <p className="text-gray-500">Hämtar program…</p>
+        ) : programError ? (
+          <p className="text-red-600">{programError}</p>
+        ) : (
+          <div className="space-y-1">
+            <p className="text-gray-700">
+              Program:{" "}
+              <span className="font-semibold">{program?.name}</span>
+            </p>
+            {program?.description ? (
+              <p className="text-gray-500">{program.description}</p>
+            ) : (
+              <p className="text-gray-500">
+                Ladda upp och hantera filer samt länkar för ditt onboardingprogram.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Upload sektion */}
@@ -123,6 +191,7 @@ export default function UploadMaterial() {
                 </th>
               </tr>
             </thead>
+
             <tbody className="divide-y divide-gray-100">
               {materials.map((item) => (
                 <tr
@@ -138,10 +207,7 @@ export default function UploadMaterial() {
                           className="text-gray-400 flex-shrink-0"
                         />
                       ) : (
-                        <File
-                          size={18}
-                          className="text-gray-400 flex-shrink-0"
-                        />
+                        <File size={18} className="text-gray-400 flex-shrink-0" />
                       )}
                       <span
                         className="text-gray-700 truncate max-w-[180px]"
@@ -188,7 +254,7 @@ export default function UploadMaterial() {
                     </div>
                   </td>
 
-                  {/* Checkboxes */}
+                  {/* Checkbox */}
                   <td className="px-5 py-3 text-center">
                     <input
                       type="checkbox"
@@ -212,13 +278,18 @@ export default function UploadMaterial() {
 
       {/* Footer btns */}
       <div className="flex justify-end items-center gap-4 pt-6 border-t border-gray-200">
-        <button className="px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+        <button
+          onClick={handleCancel}
+          className="px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+        >
           Avbryt
         </button>
-        <Link to="/programs/:id/checklist">
-        <button className="px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm">
-          Fortsätt till checklistbyggaren
-        </button>
+
+        {/* FIX: riktig route med id */}
+        <Link to={`/programs/${id}/checklist`}>
+          <button className="px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm">
+            Fortsätt till checklistbyggaren
+          </button>
         </Link>
       </div>
     </div>
