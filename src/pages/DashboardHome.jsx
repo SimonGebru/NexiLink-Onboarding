@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Plus, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   Card,
   CardHeader,
@@ -7,6 +8,7 @@ import {
   CardDescription,
   CardContent,
 } from "../components/ui/Card";
+import { apiRequest } from "../services/api.js";
 
 function StatCard({ label, value, hint }) {
   return (
@@ -79,7 +81,6 @@ function Donut({ value = 0, label }) {
   );
 }
 
-
 function MiniBarChart({ data = [] }) {
   const max = Math.max(...data.map((d) => d.value), 1);
 
@@ -91,7 +92,6 @@ function MiniBarChart({ data = [] }) {
       </div>
 
       <div className="relative rounded-lg border border-slate-200 bg-slate-50 px-3 pt-3 pb-2">
-        
         <div className="absolute inset-x-3 top-3 bottom-7 pointer-events-none">
           <div className="h-full flex flex-col justify-between">
             <div className="h-px bg-slate-200/70" />
@@ -137,25 +137,61 @@ function MiniBarChart({ data = [] }) {
   );
 }
 
+function getUiStatus(progress, overallStatus) {
+  if (overallStatus === "paused") return "Pausad";
+  if ((progress?.percent || 0) >= 100) return "Klar";
+  if ((progress?.done || 0) > 0) return "Pågår";
+  return "Ej startad";
+}
+
 export default function DashboardHome() {
-  // Mock-data (ersätt sen med riktig data)
-  const programsTotal = 3;
+  const [activeOnboardings, setActiveOnboardings] = useState([]);
+  const [programs, setPrograms] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const activeOnboardings = [
-    { id: "a1", name: "Erik Svensson", role: "Säljare", status: "Pågår" },
-    { id: "a2", name: "Lena Karlsson", role: "Utvecklare", status: "Ej startad" },
-    {
-      id: "a3",
-      name: "Maria Lundgren",
-      role: "Marknadsförare",
-      status: "Klar",
-    },
-    { id: "a4", name: "Kalle Persson", role: "Projektledare", status: "Pågår" },
-  ];
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [onboardingsData, programsData] = await Promise.all([
+          apiRequest("/api/onboardings?status=active", { method: "GET" }),
+          apiRequest("/api/programs", { method: "GET" }),
+        ]);
 
-  const ongoingTotal = activeOnboardings.filter((a) => a.status === "Pågår").length;
+        const formatted = (
+          Array.isArray(onboardingsData) ? onboardingsData : []
+        )
+          .map((row) => {
+            const o = row?.onboarding;
+            const progress = row?.progress;
+            return {
+              id: o?._id,
+              name: o?.employee?.fullName || "",
+              role: o?.employee?.jobTitle || "",
+              status: getUiStatus(progress, o?.overallStatus),
+            };
+          })
+          .filter((item) => item.name);
+
+        setActiveOnboardings(formatted);
+        setPrograms(Array.isArray(programsData) ? programsData : []);
+      } catch (error) {
+        console.error("Failed to load data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  const programsTotal = programs.length;
+  const ongoingTotal = activeOnboardings.filter(
+    (a) => a.status === "Pågår",
+  ).length;
   const doneTotal = activeOnboardings.filter((a) => a.status === "Klar").length;
-  const needsActionTotal = activeOnboardings.filter((a) => a.status === "Ej startad").length;
+  const needsActionTotal = activeOnboardings.filter(
+    (a) => a.status === "Ej startad",
+  ).length;
 
   const activityFeed = [
     {
@@ -179,18 +215,58 @@ export default function DashboardHome() {
   ];
 
   const upcoming = [
-  { id: "u1", title: "Intro för nyanställd", subtitle: "Kalle Persson", when: "Idag" },
-  { id: "u2", title: "Systemåtkomster & IT-Setup", subtitle: "Lena Karlsson", when: "Imorgon" },
-  { id: "u3", title: "Genomgång av onboarding-plan", subtitle: "Erik Svensson", when: "Onsdag" },
-  { id: "u4", title: "Uppföljningsmöte", subtitle: "Maria Lundgren", when: "Fredag" },
-];
+    {
+      id: "u1",
+      title: "Intro för nyanställd",
+      subtitle: "Kalle Persson",
+      when: "Idag",
+    },
+    {
+      id: "u2",
+      title: "Systemåtkomster & IT-Setup",
+      subtitle: "Lena Karlsson",
+      when: "Imorgon",
+    },
+    {
+      id: "u3",
+      title: "Genomgång av onboarding-plan",
+      subtitle: "Erik Svensson",
+      when: "Onsdag",
+    },
+    {
+      id: "u4",
+      title: "Uppföljningsmöte",
+      subtitle: "Maria Lundgren",
+      when: "Fredag",
+    },
+  ];
 
   const todos = [
-  { id: "t1", title: "Tilldela mentor", subtitle: "Lena Karlsson", status: "Ej startad" },
-  { id: "t2", title: "Följ upp status", subtitle: "Kalle Persson", status: "Pågår" },
-  { id: "t3", title: "Skapa konto & behörigheter", subtitle: "Erik Svensson", status: "Ej startad" },
-  { id: "t4", title: "Boka intro-möte", subtitle: "Maria Lundgren", status: "Pågår" },
-];
+    {
+      id: "t1",
+      title: "Tilldela mentor",
+      subtitle: "Lena Karlsson",
+      status: "Ej startad",
+    },
+    {
+      id: "t2",
+      title: "Följ upp status",
+      subtitle: "Kalle Persson",
+      status: "Pågår",
+    },
+    {
+      id: "t3",
+      title: "Skapa konto & behörigheter",
+      subtitle: "Erik Svensson",
+      status: "Ej startad",
+    },
+    {
+      id: "t4",
+      title: "Boka intro-möte",
+      subtitle: "Maria Lundgren",
+      status: "Pågår",
+    },
+  ];
 
   // Goals (mock)
   const goalsWeek = 75;
@@ -244,15 +320,26 @@ export default function DashboardHome() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Program totalt" value={programsTotal} hint="Redo att återanvändas" />
-        <StatCard label="Pågående onboardings" value={ongoingTotal} hint="Aktiva just nu" />
+        <StatCard
+          label="Program totalt"
+          value={programsTotal}
+          hint="Redo att återanvändas"
+        />
+        <StatCard
+          label="Pågående onboardings"
+          value={ongoingTotal}
+          hint="Aktiva just nu"
+        />
         <StatCard label="Klara" value={doneTotal} hint="Avslutade flöden" />
-        <StatCard label="Behöver åtgärd" value={needsActionTotal} hint="Ej startade onboardings" />
+        <StatCard
+          label="Behöver åtgärd"
+          value={needsActionTotal}
+          hint="Ej startade onboardings"
+        />
       </div>
 
       {/* Main grid */}
       <div className="grid gap-6 lg:grid-cols-3 items-start">
-        
         <Card className="lg:col-start-1 lg:row-start-1">
           <CardHeader>
             <CardTitle>Ny aktivitet</CardTitle>
@@ -266,10 +353,14 @@ export default function DashboardHome() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-slate-900">{e.title}</div>
+                    <div className="text-sm font-semibold text-slate-900">
+                      {e.title}
+                    </div>
                     <div className="text-sm text-slate-500">{e.subtitle}</div>
                   </div>
-                  <div className="text-xs text-slate-400 whitespace-nowrap">{e.time}</div>
+                  <div className="text-xs text-slate-400 whitespace-nowrap">
+                    {e.time}
+                  </div>
                 </div>
               </div>
             ))}
@@ -282,15 +373,23 @@ export default function DashboardHome() {
             <CardDescription>Snabbstatus per nyanställd.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {activeOnboardings.map((a) => (
-              <Link key={a.id} to="/onboarding/assign">
-                <ListItem
-                  title={a.name}
-                  subtitle={a.role}
-                  right={<StatusPill status={a.status} />}
-                />
-              </Link>
-            ))}
+            {loading ? (
+              <div className="text-sm text-slate-500">Laddar...</div>
+            ) : activeOnboardings.length > 0 ? (
+              activeOnboardings.map((a) => (
+                <Link key={a.id} to={`/onboardings/${a.id}`}>
+                  <ListItem
+                    title={a.name}
+                    subtitle={a.role}
+                    right={<StatusPill status={a.status} />}
+                  />
+                </Link>
+              ))
+            ) : (
+              <div className="text-sm text-slate-500">
+                Inga aktiva onboardings
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -307,17 +406,20 @@ export default function DashboardHome() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-slate-900">{u.title}</div>
+                    <div className="text-sm font-semibold text-slate-900">
+                      {u.title}
+                    </div>
                     <div className="text-sm text-slate-500">{u.subtitle}</div>
                   </div>
-                  <div className="text-xs text-slate-400 whitespace-nowrap">{u.when}</div>
+                  <div className="text-xs text-slate-400 whitespace-nowrap">
+                    {u.when}
+                  </div>
                 </div>
               </div>
             ))}
           </CardContent>
         </Card>
 
-        
         {/* Goals */}
         <Card className="lg:col-start-1 lg:col-span-2 lg:row-start-2">
           <CardHeader>
@@ -329,12 +431,16 @@ export default function DashboardHome() {
             <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
               <div className="rounded-xl border border-slate-200 bg-white p-3">
                 <Donut value={goalsWeek} label="För veckan" />
-                <div className="mt-2 text-sm text-slate-500">Välj onboarding</div>
+                <div className="mt-2 text-sm text-slate-500">
+                  Välj onboarding
+                </div>
               </div>
 
               <div className="rounded-xl border border-slate-200 bg-white p-3">
                 <Donut value={goalsMonth} label="För månaden" />
-                <div className="mt-2 text-sm text-slate-500">Avsluta onboardings</div>
+                <div className="mt-2 text-sm text-slate-500">
+                  Avsluta onboardings
+                </div>
               </div>
             </div>
 
