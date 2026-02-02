@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FileText, Link as LinkIcon } from "lucide-react";
 
 import {
@@ -11,6 +12,10 @@ import {
 
 import Button from "../components/ui/Button";
 import { FormField, Select, Input, Textarea } from "../components/ui/Form";
+
+import { fetchPrograms } from "../services/programService";
+import { fetchEmployees } from "../services/employeeService";
+import { createOnboarding } from "../services/onboardingService";
 
 function ProgressBar({ value = 0 }) {
   const safe = Math.max(0, Math.min(100, value));
@@ -48,12 +53,7 @@ function StatusPill({ status }) {
   );
 }
 
-function TaskCard({
-  title,
-  items = [],
-  status = "Ej startad",
-  notePlaceholder = "Lägg till kommentar...",
-}) {
+function TaskCard({ title, items = [], status = "Ej startad", comment = "" }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-start justify-between gap-4">
@@ -61,9 +61,9 @@ function TaskCard({
           <div className="text-sm font-semibold text-slate-900">{title}</div>
 
           <div className="mt-2 space-y-1">
-            {items.map((it) => (
+            {items.map((it, idx) => (
               <div
-                key={it.label}
+                key={`${it.label}-${idx}`}
                 className="flex items-center gap-2 text-sm text-slate-600"
               >
                 {it.type === "file" ? (
@@ -84,7 +84,8 @@ function TaskCard({
         <Textarea
           className="min-h-[90px] text-sm"
           rows={4}
-          placeholder={notePlaceholder}
+          value={comment}
+          readOnly
         />
       </div>
     </div>
@@ -92,57 +93,99 @@ function TaskCard({
 }
 
 export default function AssignOnboarding() {
-  const employees = useMemo(
-    () => ["Erik Svensson", "Lena Karlsson", "Maria Lundgren", "Kalle Persson"],
-    []
-  );
+  const navigate = useNavigate();
+  const [employees, setEmployees] = useState([]);
+  const [programs, setPrograms] = useState([]);
 
-  const programs = useMemo(
-    () => [
-      "Intro för nyanställd",
-      "Senior konsult onboarding",
-      "Praktikantprogram sommar 2024",
-    ],
-    []
-  );
-
-  const [selectedEmployee, setSelectedEmployee] = useState("");
-  const [selectedProgram, setSelectedProgram] = useState("");
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
+  const [selectedProgramId, setSelectedProgramId] = useState("");
   const [startDate, setStartDate] = useState("");
 
-  const progress = 75;
+  const [loadingLists, setLoadingLists] = useState(true);
+  const [listError, setListError] = useState("");
 
-  const overviewCards = [
-    {
-      title: "Välkomstpaket & Introduktion",
-      status: "Klar",
-      items: [
-        { type: "file", label: "Välkomstguide.pdf" },
-        { type: "file", label: "Företagspresentation.pptx" },
-      ],
-    },
-    {
-      title: "Systemåtkomster & IT-Setup",
-      status: "Pågår",
-      items: [
-        { type: "file", label: "IT policy.pdf" },
-        { type: "file", label: "Inloggningsguide.pdf" },
-      ],
-      notePlaceholder: "Väntar på aktivering av konto för Teams och Jira...",
-    },
-    {
-      title: "Möte med Mentor",
-      status: "Ej startad",
-      items: [{ type: "link", label: "Boka möte (länk)" }],
-    },
-    {
-      title: "Utbildning i Verktyg",
-      status: "Ej startad",
-      items: [{ type: "file", label: "Verktygsmanual.pdf" }],
-    },
-  ];
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
-  const canStart = Boolean(selectedEmployee && selectedProgram && startDate);
+  const [createdOnboarding, setCreatedOnboarding] = useState(null);
+  const [progress, setProgress] = useState({ total: 0, done: 0, percent: 0 });
+
+  useEffect(() => {
+    let alive = true;
+
+    async function load() {
+      try {
+        setLoadingLists(true);
+        setListError("");
+
+        const [programList, employeeList] = await Promise.all([
+          fetchPrograms(),
+          fetchEmployees(),
+        ]);
+
+        if (!alive) return;
+
+        setPrograms(Array.isArray(programList) ? programList : []);
+        // filtrera bort inaktiva, eftersom backend kräver active !== false
+        setEmployees(
+          Array.isArray(employeeList)
+            ? employeeList.filter((e) => e.active !== false)
+            : []
+        );
+      } catch (err) {
+        if (!alive) return;
+        setListError(err?.message || "Kunde inte hämta listor.");
+      } finally {
+        if (!alive) return;
+        setLoadingLists(false);
+      }
+    }
+
+    load();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const selectedEmployee = useMemo(
+    () => employees.find((e) => e._id === selectedEmployeeId) || null,
+    [employees, selectedEmployeeId]
+  );
+
+  const selectedProgram = useMemo(
+    () => programs.find((p) => p._id === selectedProgramId) || null,
+    [programs, selectedProgramId]
+  );
+
+  const canStart = Boolean(selectedEmployeeId && selectedProgramId && startDate);
+
+  async function handleStart() {
+  if (!canStart || submitting) return;
+
+  try {
+    setSubmitting(true);
+    setSubmitError("");
+
+    const res = await createOnboarding({
+      employeeId: selectedEmployeeId,
+      programId: selectedProgramId,
+      startDate,
+    });
+
+    // res = { onboarding, progress }
+    setCreatedOnboarding(res.onboarding);
+    setProgress(res.progress);
+
+    const onboardingId = res?.onboarding?._id;
+    if (onboardingId) {
+      navigate(`/onboardings/${onboardingId}`);
+    }
+  } catch (err) {
+    setSubmitError(err?.message || "Kunde inte starta onboarding.");
+  } finally {
+    setSubmitting(false);
+  }
+}
 
   return (
     <div className="w-full space-y-6">
@@ -157,9 +200,12 @@ export default function AssignOnboarding() {
 
         <div className="text-sm text-slate-600">
           <span className="font-medium text-slate-900">Val:</span>{" "}
-          {selectedEmployee || "—"} • {selectedProgram || "—"} •{" "}
+          {selectedEmployee?.fullName || "—"} • {selectedProgram?.name || "—"} •{" "}
           {startDate || "—"}
         </div>
+
+        {listError ? <div className="text-sm text-red-600">{listError}</div> : null}
+        {submitError ? <div className="text-sm text-red-600">{submitError}</div> : null}
       </div>
 
       {/* Two columns */}
@@ -177,15 +223,16 @@ export default function AssignOnboarding() {
             <FormField label="Välj nyanställd">
               <Select
                 className="h-12 text-base"
-                value={selectedEmployee}
-                onChange={(e) => setSelectedEmployee(e.target.value)}
+                value={selectedEmployeeId}
+                onChange={(e) => setSelectedEmployeeId(e.target.value)}
+                disabled={loadingLists}
               >
                 <option value="" disabled>
-                  Välj en anställd
+                  {loadingLists ? "Hämtar..." : "Välj en anställd"}
                 </option>
                 {employees.map((e) => (
-                  <option key={e} value={e}>
-                    {e}
+                  <option key={e._id} value={e._id}>
+                    {e.fullName} ({e.jobTitle})
                   </option>
                 ))}
               </Select>
@@ -194,15 +241,16 @@ export default function AssignOnboarding() {
             <FormField label="Välj onboardingprogram">
               <Select
                 className="h-12 text-base"
-                value={selectedProgram}
-                onChange={(e) => setSelectedProgram(e.target.value)}
+                value={selectedProgramId}
+                onChange={(e) => setSelectedProgramId(e.target.value)}
+                disabled={loadingLists}
               >
                 <option value="" disabled>
-                  Välj ett program
+                  {loadingLists ? "Hämtar..." : "Välj ett program"}
                 </option>
                 {programs.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
+                  <option key={p._id} value={p._id}>
+                    {p.name}
                   </option>
                 ))}
               </Select>
@@ -219,20 +267,21 @@ export default function AssignOnboarding() {
 
             <div className="pt-2">
               <Button
-                disabled={!canStart}
+                onClick={handleStart}
+                disabled={!canStart || submitting}
                 className={[
                   "h-12 w-full text-base",
-                  canStart
+                  canStart && !submitting
                     ? "bg-[#1A4D4F] hover:bg-[#1A4D4F]/90"
                     : "bg-slate-200 text-slate-500 cursor-not-allowed",
                 ].join(" ")}
               >
-                Starta
+                {submitting ? "Startar..." : "Starta"}
               </Button>
 
               <p className="mt-3 text-xs text-slate-500">
                 {canStart
-                  ? "Systemet skapar EmployeeOnboarding-status och kopierar checklistan till individens instans."
+                  ? "Systemet skapar EmployeeOnboarding och kopierar checklistan från programmet."
                   : "Välj nyanställd, program och startdatum för att kunna starta onboarding."}
               </p>
             </div>
@@ -246,35 +295,47 @@ export default function AssignOnboarding() {
               <CardTitle className="text-xl">Nyanställd Onboarding Översikt</CardTitle>
               <CardDescription>
                 {selectedEmployee
-                  ? `${selectedEmployee}s onboarding för introduktionen`
+                  ? `${selectedEmployee.fullName}s onboarding`
                   : "Välj en anställd för att se översikt."}
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-5">
-              {selectedEmployee ? (
+              {createdOnboarding ? (
                 <>
-                  <ProgressBar value={progress} />
+                  <ProgressBar value={progress?.percent || 0} />
 
                   <div className="space-y-4">
-                    {overviewCards.map((c) => (
-                      <TaskCard
-                        key={c.title}
-                        title={c.title}
-                        items={c.items}
-                        status={c.status}
-                        notePlaceholder={c.notePlaceholder}
-                      />
-                    ))}
+                    {createdOnboarding.tasks
+                      ?.slice()
+                      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                      .map((t) => (
+                        <TaskCard
+                          key={t._id}
+                          title={t.title}
+                          items={t.items || []}
+                          status={t.status}
+                          comment={t.comment || ""}
+                        />
+                      ))}
                   </div>
                 </>
+              ) : selectedEmployee ? (
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6">
+                  <div className="text-sm font-semibold text-slate-900">
+                    Ingen onboarding skapad ännu
+                  </div>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Välj program och startdatum och klicka på “Starta”.
+                  </p>
+                </div>
               ) : (
                 <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6">
                   <div className="text-sm font-semibold text-slate-900">
                     Ingen översikt ännu
                   </div>
                   <p className="mt-1 text-sm text-slate-600">
-                    Välj en anställd till vänster för att se status, material och kommentarer.
+                    Välj en anställd till vänster för att komma igång.
                   </p>
                 </div>
               )}

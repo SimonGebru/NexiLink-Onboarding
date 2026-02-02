@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import Button from "../components/ui/Button";
 import {
   Card,
   CardHeader,
@@ -12,19 +11,12 @@ import { ChevronRight, Plus } from "lucide-react";
 
 import { apiRequest } from "../services/api";
 
-// MOCK tills onboarding-API är klart
-const activeOnboardings = [
-  { id: "a1", name: "Erik Svensson", role: "Säljare", status: "Pågår" },
-  { id: "a2", name: "Lena Karlsson", role: "Utvecklare", status: "Ej startad" },
-  { id: "a3", name: "Maria Lundgren", role: "Marknadsförare", status: "Klar" },
-  { id: "a4", name: "Kalle Persson", role: "Projektledare", status: "Pågår" },
-];
-
 function StatusPill({ status }) {
   const map = {
     Pågår: "bg-blue-50 text-blue-700 border-blue-200",
     "Ej startad": "bg-slate-50 text-slate-700 border-slate-200",
     Klar: "bg-green-50 text-green-700 border-green-200",
+    Pausad: "bg-amber-50 text-amber-700 border-amber-200",
   };
 
   return (
@@ -54,7 +46,9 @@ function ListRow({ title, subtitle, right }) {
     >
       <div className="min-w-0">
         <div className="font-medium text-slate-900">{title}</div>
-        {subtitle ? <div className="text-sm text-slate-500">{subtitle}</div> : null}
+        {subtitle ? (
+          <div className="text-sm text-slate-500">{subtitle}</div>
+        ) : null}
       </div>
 
       <div className="flex items-center gap-3">
@@ -65,11 +59,25 @@ function ListRow({ title, subtitle, right }) {
   );
 }
 
+// Gör en “UI-status” som matchar dina pills: Ej startad / Pågår / Klar
+function getUiStatus(progress, overallStatus) {
+  if (overallStatus === "paused") return "Pausad";
+  if ((progress?.percent || 0) >= 100) return "Klar";
+  if ((progress?.done || 0) > 0) return "Pågår";
+  return "Ej startad";
+}
+
 export default function OnboardingOverview() {
   // Programs från backend
   const [programs, setPrograms] = useState([]);
   const [loadingPrograms, setLoadingPrograms] = useState(true);
   const [programError, setProgramError] = useState("");
+
+  // Onboardings från backend (NYTT)
+  // Backend returnerar: [{ onboarding, progress }, ...]
+  const [activeOnboardings, setActiveOnboardings] = useState([]);
+  const [loadingOnboardings, setLoadingOnboardings] = useState(true);
+  const [onboardingError, setOnboardingError] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -86,8 +94,6 @@ export default function OnboardingOverview() {
       } catch (err) {
         if (!alive) return;
 
-        // Din backend kastar 404 "No programs found" om listan är tom.
-        // Vi vill tolka det som "tom lista", inte visa error.
         const msg = err?.message || "";
         if (msg.toLowerCase().includes("no programs found")) {
           setPrograms([]);
@@ -107,22 +113,56 @@ export default function OnboardingOverview() {
     };
   }, []);
 
-  // Stats: programTotal baseras på backend-data
+  // NYTT: hämta onboardings från backend
+  useEffect(() => {
+    let alive = true;
+
+    async function loadOnboardings() {
+      try {
+        setLoadingOnboardings(true);
+        setOnboardingError("");
+
+        // status=active är default i din controller, men vi kan vara tydliga
+        const data = await apiRequest("/api/onboardings?status=active", {
+          method: "GET",
+        });
+
+        if (!alive) return;
+        setActiveOnboardings(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (!alive) return;
+        setOnboardingError(err?.message || "Kunde inte hämta onboardings.");
+      } finally {
+        if (!alive) return;
+        setLoadingOnboardings(false);
+      }
+    }
+
+    loadOnboardings();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  // Stats
   const programTotal = programs.length;
 
-  // Stats: onboardings är fortfarande mock
-  const ongoingTotal = useMemo(
-    () => activeOnboardings.filter((a) => a.status === "Pågår").length,
-    []
-  );
-  const doneTotal = useMemo(
-    () => activeOnboardings.filter((a) => a.status === "Klar").length,
-    []
-  );
-  const needsActionTotal = useMemo(
-    () => activeOnboardings.filter((a) => a.status === "Ej startad").length,
-    []
-  );
+  const onboardingStats = useMemo(() => {
+    const rows = activeOnboardings || [];
+
+    let ongoing = 0;
+    let done = 0;
+    let needsAction = 0;
+
+    for (const row of rows) {
+      const uiStatus = getUiStatus(row?.progress, row?.onboarding?.overallStatus);
+      if (uiStatus === "Klar") done++;
+      else if (uiStatus === "Pågår") ongoing++;
+      else needsAction++;
+    }
+
+    return { ongoing, done, needsAction };
+  }, [activeOnboardings]);
 
   return (
     <div className="space-y-6">
@@ -185,19 +225,25 @@ export default function OnboardingOverview() {
 
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <div className="text-xs font-medium text-slate-500">Pågående onboardings</div>
-          <div className="mt-2 text-2xl font-bold text-slate-900">{ongoingTotal}</div>
+          <div className="mt-2 text-2xl font-bold text-slate-900">
+            {onboardingStats.ongoing}
+          </div>
           <div className="mt-1 text-sm text-slate-500">Aktiva just nu</div>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <div className="text-xs font-medium text-slate-500">Klara</div>
-          <div className="mt-2 text-2xl font-bold text-slate-900">{doneTotal}</div>
+          <div className="mt-2 text-2xl font-bold text-slate-900">
+            {onboardingStats.done}
+          </div>
           <div className="mt-1 text-sm text-slate-500">Avslutade flöden</div>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <div className="text-xs font-medium text-slate-500">Behöver åtgärd</div>
-          <div className="mt-2 text-2xl font-bold text-slate-900">{needsActionTotal}</div>
+          <div className="mt-2 text-2xl font-bold text-slate-900">
+            {onboardingStats.needsAction}
+          </div>
           <div className="mt-1 text-sm text-slate-500">Ej startade onboardings</div>
         </div>
       </div>
@@ -252,7 +298,7 @@ export default function OnboardingOverview() {
           </CardContent>
         </Card>
 
-        {/* Active onboardings (mock) */}
+        {/* Active onboardings (BACKEND) */}
         <Card>
           <CardHeader>
             <CardTitle>Aktiva onboardings</CardTitle>
@@ -260,16 +306,34 @@ export default function OnboardingOverview() {
           </CardHeader>
 
           <CardContent className="space-y-3">
-            {activeOnboardings.length > 0 ? (
-              activeOnboardings.map((a) => (
-                <Link key={a.id} to="/assignments">
-                  <ListRow
-                    title={a.name}
-                    subtitle={a.role}
-                    right={<StatusPill status={a.status} />}
-                  />
-                </Link>
-              ))
+            {loadingOnboardings ? (
+              <div className="text-sm text-slate-500">Laddar onboardings…</div>
+            ) : onboardingError ? (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {onboardingError}
+              </div>
+            ) : activeOnboardings.length > 0 ? (
+              activeOnboardings.map((row) => {
+                const o = row?.onboarding;
+                const progress = row?.progress;
+
+                const employeeName = o?.employee?.fullName || "—";
+                const jobTitle = o?.employee?.jobTitle || "";
+                const programName = o?.program?.name || "";
+                const uiStatus = getUiStatus(progress, o?.overallStatus);
+
+                const subtitle = [jobTitle, programName].filter(Boolean).join(" • ");
+
+                return (
+                  <Link key={o?._id} to={`/onboardings/${o?._id}`}>
+                    <ListRow
+                      title={employeeName}
+                      subtitle={subtitle}
+                      right={<StatusPill status={uiStatus} />}
+                    />
+                  </Link>
+                );
+              })
             ) : (
               <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6">
                 <div className="text-sm font-semibold text-slate-900">

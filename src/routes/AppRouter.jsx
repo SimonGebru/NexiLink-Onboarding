@@ -8,6 +8,7 @@ import CreateProgram from "../pages/CreateProgram";
 import AssignOnboarding from "../pages/AssignOnboarding";
 import UploadMaterial from "../pages/UploadMaterial.jsx";
 import ChecklistBuilder from "../pages/ChecklistBuilder.jsx";
+import OnboardingDetails from "../pages/OnboardingDetails";
 
 import Login from "../pages/Login";
 import Register from "../pages/Register";
@@ -63,6 +64,7 @@ export default function AppRouter() {
           <Route path="/programs/:id/checklist" element={<ChecklistBuilder />} /> 
 
           <Route path="/onboarding/assign" element={<AssignOnboarding />} />
+          <Route path="/onboardings/:id" element={<OnboardingDetails />} />
         </Route>
       </Route>
 
