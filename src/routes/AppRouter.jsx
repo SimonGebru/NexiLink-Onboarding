@@ -9,6 +9,7 @@ import AssignOnboarding from "../pages/AssignOnboarding";
 import UploadMaterial from "../pages/UploadMaterial.jsx";
 import ChecklistBuilder from "../pages/ChecklistBuilder.jsx";
 import OnboardingDetails from "../pages/OnboardingDetails";
+import Employees from "../pages/Employees";
 
 import Login from "../pages/Login";
 import Register from "../pages/Register";
@@ -57,7 +58,7 @@ export default function AppRouter() {
           <Route path="/dashboard" element={<DashboardHome />} />
           <Route path="/onboarding" element={<OnboardingOverview />} />
 
-          <Route path="/employees" element={<Placeholder title="Employees" />} />
+          <Route path="/employees" element={<Employees />} />
 
           <Route path="/programs/new" element={<CreateProgram />} />
           <Route path="/programs/:id/material" element={<UploadMaterial />} />
