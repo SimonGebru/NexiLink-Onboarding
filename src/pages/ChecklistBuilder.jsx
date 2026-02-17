@@ -102,12 +102,10 @@ export default function ChecklistBuilder() {
                 Manuell checklistbyggare
               </h3>
               <p className="text-sm mb-3 text-gray-500">
-                Lorem ipsum, dolor sit amet consectetur adipisicing elit. Quam
-                distinctio incidunt quisquam laboriosam earum dolorem?
+                Bygg din checklista från grunden, uppgift för uppgift.
               </p>
               <p className="text-sm mb-6 text-gray-500">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                Distinctio, numquam voluptate et quos aliquam eos.
+                Lägg till, redigera och anordna uppgifter med full kontroll över varje detalj 
               </p>
               <button className="px-4 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 bg-white transition-colors">
                 Välj
@@ -121,12 +119,10 @@ export default function ChecklistBuilder() {
               Mallbaserad: Startmall
             </h3>
             <p className="text-sm mb-3 text-gray-500">
-              Lorem ipsum dolor sit amet, consectetur adipisicing elit.
-              Obcaecati animi nobis culpa non laborum voluptate?
+              Använd en fördefinerad mall som du kan anpassa.
             </p>
             <p className="text-sm mb-6 text-gray-500">
-              Lorem ipsum dolor sit, amet consectetur adipisicing elit. Nostrum
-              sapiente iste eius vero tempore error?
+              Fyll snabbt i en standardiserad checklista för de första 90 dagarna.
             </p>
             <button className="px-4 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 bg-white transition-colors">
               Välj
@@ -139,12 +135,10 @@ export default function ChecklistBuilder() {
               Autogenerera enkel punktlista
             </h3>
             <p className="text-sm mb-3 text-gray-500">
-              Lorem ipsum, dolor sit amet consectetur adipisicing elit. Id
-              fugiat, voluptates saepe deserunt molestiae vitae.
+              Skapa uppgifter från rubriker i befintliga material
             </p>
             <p className="text-sm mb-6 text-gray-500">
-              Lorem ipsum dolor sit amet, consectetur adipisicing elit. Illo
-              ipsa excepturi est dolores at dolorem!
+              Markera rubriker i uppladdade filer för att automatiskt skapa uppgifterna
             </p>
             <button className="px-4 py-1 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 bg-white transition-colors">
               Välj
