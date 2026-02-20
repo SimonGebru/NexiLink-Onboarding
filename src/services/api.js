@@ -1,19 +1,27 @@
-// src/services/api.js
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 export async function apiRequest(path, options = {}) {
   const url = `${API_BASE_URL}${path}`;
-
   const token = localStorage.getItem("token");
+
+  const isFormData =
+    typeof FormData !== "undefined" && options.body instanceof FormData;
+
+  
+  const headers = {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options.headers || {}),
+  };
+
+  
+  if (!isFormData && options.body != null) {
+    // Om body redan är en string (JSON.stringify) är det JSON
+    headers["Content-Type"] = headers["Content-Type"] || "application/json";
+  }
 
   const res = await fetch(url, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    },
+    headers,
   });
 
   // Försök läsa JSON om det finns
@@ -26,7 +34,6 @@ export async function apiRequest(path, options = {}) {
   }
 
   if (!res.ok) {
-    // Försök plocka ut “snällt” felmeddelande från backend
     const message =
       (data && data.message) ||
       (typeof data === "string" && data) ||

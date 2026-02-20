@@ -13,7 +13,7 @@ import { FormField, Input, Select, Textarea } from "../components/ui/Form";
 
 import { CloudUpload, FileText, Link as LinkIcon, X } from "lucide-react";
 
-import { createProgram } from "../services/programService";
+import { createProgram, uploadProgramMaterials } from "../services/programService";
 
 export default function CreateProgram() {
   const navigate = useNavigate();
@@ -44,31 +44,34 @@ export default function CreateProgram() {
     []
   );
 
-  // ===== FORM STATE (NYTT) =====
+  
   const [title, setTitle] = useState("");
   const [unit, setUnit] = useState("");
   const [role, setRole] = useState("");
   const [description, setDescription] = useState("");
   const [responsible, setResponsible] = useState("");
 
-  // Feedback state
+  
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // När vi väl skapat programmet vill vi komma ihåg id:t
+  
   const [createdProgramId, setCreatedProgramId] = useState(null);
 
-  // ===== MODAL STATE (som du hade) =====
+ 
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [uploadError, setUploadError] = useState("");
+
   const fileInputRef = useRef(null);
 
   function openUploadModal() {
+    setUploadError("");
     setIsUploadOpen(true);
   }
 
   function closeUploadModal() {
+    if (saving) return; 
     setIsUploadOpen(false);
   }
 
@@ -97,7 +100,7 @@ export default function CreateProgram() {
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
-  // ===== NYTT: skapar program i backend =====
+  
   async function handleCreateProgram() {
     setError("");
 
@@ -109,29 +112,27 @@ export default function CreateProgram() {
     try {
       setSaving(true);
 
-      // Payload: skicka bara det som finns
+      
       const payload = {
-  name: title.trim(),
-  unit: unit || undefined,
-  role: role || undefined,
-  description: description.trim() || undefined,
-  responsible: responsible.trim() || undefined,
-};
+        name: title.trim(),
+        unit: unit || undefined,
+        targetRole: role || undefined,
+        description: description.trim() || undefined,
+
+        // responsible finns inte i schema än, sparas inte i DB just nu
+        responsible: responsible.trim() || undefined,
+      };
 
       const created = await createProgram(payload);
 
-      // Förväntar oss Mongo: created._id
       const id = created?._id;
-      if (!id) {
-        throw new Error("Backend returnerade inget program-ID.");
-      }
+      if (!id) throw new Error("Backend returnerade inget program-ID.");
 
       setCreatedProgramId(id);
       return id;
     } catch (err) {
       const msg = err?.message || "Kunde inte skapa program.";
 
-      // extra tydligt om du inte är admin
       if (msg.toLowerCase().includes("forbidden") || msg.includes("403")) {
         setError("Endast admin kan skapa program.");
       } else {
@@ -152,14 +153,29 @@ export default function CreateProgram() {
     navigate(`/programs/${id}/material`);
   }
 
-  // Modal-knapp: skapa (om inte skapad) och fortsätt
+  
   async function handleUploadAndContinue() {
+    setUploadError("");
+
     const id = createdProgramId || (await handleCreateProgram());
     if (!id) return;
 
-    // Själva filuppladdningen gör vi senare.
-    // Nu: bara gå vidare till material-vyn för programmet.
-    navigate(`/programs/${id}/material`);
+    try {
+      setSaving(true);
+
+      // 1) Uploada filer om vi har några
+      if (selectedFiles.length > 0) {
+        await uploadProgramMaterials(id, selectedFiles);
+      }
+
+      // 2) Stäng modal och gå vidare
+      setIsUploadOpen(false);
+      navigate(`/programs/${id}/material`);
+    } catch (err) {
+      setUploadError(err?.message || "Kunde inte ladda upp filer.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -281,7 +297,7 @@ export default function CreateProgram() {
             </button>
           </div>
 
-          {/* Actions (NYTT) */}
+          {/* Actions */}
           <div className="pt-2 border-t border-slate-100" />
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
             <Button
@@ -333,6 +349,12 @@ export default function CreateProgram() {
 
             {/* Content */}
             <div className="p-6 space-y-5">
+              {uploadError ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {uploadError}
+                </div>
+              ) : null}
+
               <div>
                 <h3 className="text-base font-semibold text-slate-900 mb-1">
                   Lägg till nya material
@@ -363,7 +385,7 @@ export default function CreateProgram() {
                   multiple
                   className="hidden"
                   onChange={onFilesSelected}
-                  accept=".pdf,.doc,.docx,.ppt,.pptx"
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.xlsx,.xls"
                 />
 
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -388,7 +410,7 @@ export default function CreateProgram() {
                   </div>
 
                   <p className="text-xs text-slate-400">
-                    Accepterade filtyper: PDF, DOCX, PPTX och externa länkar.
+                    Accepterade filtyper: PDF, DOCX, XLSX, bilder m.m.
                   </p>
                 </div>
               </div>
@@ -422,6 +444,7 @@ export default function CreateProgram() {
                             type="button"
                             onClick={() => removeSelectedFile(idx)}
                             className="text-sm text-slate-600 hover:text-red-600 hover:bg-red-50 px-2 py-1 rounded-md transition-colors"
+                            disabled={saving}
                           >
                             Ta bort
                           </button>
@@ -439,6 +462,7 @@ export default function CreateProgram() {
                 type="button"
                 onClick={closeUploadModal}
                 className="h-11 px-5 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-100 transition-colors"
+                disabled={saving}
               >
                 Avbryt
               </button>
@@ -448,9 +472,9 @@ export default function CreateProgram() {
                 onClick={handleUploadAndContinue}
                 className="h-11 px-6 rounded-xl bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={saving}
-                title="Skapa program och fortsätt"
+                title="Skapa program, ladda upp och fortsätt"
               >
-                {saving ? "Skapar..." : "Ladda upp och fortsätt"}
+                {saving ? "Laddar upp..." : "Ladda upp och fortsätt"}
               </button>
             </div>
           </div>
