@@ -1,397 +1,159 @@
 import { Link } from "react-router-dom";
-import { Plus, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "../components/ui/Card";
-import { apiRequest } from "../services/api.js";
 
-function StatCard({ label, value, hint }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
-      <div className="text-xs font-medium text-slate-500">{label}</div>
-      <div className="mt-2 text-2xl font-bold text-slate-900">{value}</div>
-      {hint ? <div className="mt-1 text-sm text-slate-500">{hint}</div> : null}
-    </div>
-  );
-}
+import DashboardHeader from "../features/dashboardHome/components/DashboardHeader";
+import StatCard from "../features/dashboardHome/components/StatCard";
+import SimpleInfoCard from "../features/dashboardHome/components/SimpleInfoCard";
+import ActivityCard from "../features/dashboardHome/components/ActivityCard";
+import ListItem from "../features/dashboardHome/components/ListItem";
+import StatusPill from "../features/dashboardHome/components/StatusPill";
+import Donut from "../features/dashboardHome/components/Donut";
+import MiniBarChart from "../features/dashboardHome/components/MiniBarChart";
 
-function ListItem({ title, subtitle, right }) {
-  return (
-    <div className="group flex items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 hover:bg-slate-50 hover:border-slate-300 transition-colors">
-      <div className="min-w-0">
-        <div className="font-medium text-slate-900">{title}</div>
-        {subtitle ? <div className="text-sm text-slate-500">{subtitle}</div> : null}
-      </div>
-      <div className="flex items-center gap-3">
-        {right}
-        <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-600 transition-colors" />
-      </div>
-    </div>
-  );
-}
-
-function StatusPill({ status }) {
-  const map = {
-    Pågår: "bg-blue-50 text-blue-700 border-blue-200",
-    "Ej startad": "bg-slate-50 text-slate-700 border-slate-200",
-    Klar: "bg-green-50 text-green-700 border-green-200",
-    Pausad: "bg-amber-50 text-amber-700 border-amber-200",
-  };
-
-  return (
-    <span
-      className={[
-        "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium",
-        map[status] || map["Ej startad"],
-      ].join(" ")}
-    >
-      {status}
-    </span>
-  );
-}
-
-function Donut({ value = 0, label }) {
-  const safe = Math.max(0, Math.min(100, value));
-  const deg = safe * 3.6;
-
-  return (
-    <div className="flex items-center gap-3">
-      <div
-        className="relative h-14 w-14 rounded-full"
-        style={{
-          background: `conic-gradient(#1A4D4F ${deg}deg, #E2E8F0 0deg)`,
-        }}
-      >
-        <div className="absolute inset-[6px] rounded-full bg-white flex items-center justify-center">
-          <span className="text-xs font-semibold text-slate-900">{safe}%</span>
-        </div>
-      </div>
-
-      <div className="min-w-0">
-        <div className="text-sm font-semibold text-slate-900 truncate">{label}</div>
-      </div>
-    </div>
-  );
-}
-
-function MiniBarChart({ data = [] }) {
-  const max = Math.max(...data.map((d) => d.value), 1);
-
-  return (
-    <div className="mt-4">
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-sm font-semibold text-slate-900">Aktivitet</div>
-        <div className="text-xs text-slate-400">Senaste 7 dagar</div>
-      </div>
-
-      <div className="relative rounded-lg border border-slate-200 bg-slate-50 px-3 pt-3 pb-2">
-        <div className="absolute inset-x-3 top-3 bottom-7 pointer-events-none">
-          <div className="h-full flex flex-col justify-between">
-            <div className="h-px bg-slate-200/70" />
-            <div className="h-px bg-slate-200/60" />
-            <div className="h-px bg-slate-200/50" />
-          </div>
-        </div>
-
-        <div className="relative h-24 flex items-end justify-between gap-3 pt-2">
-          {data.map((d) => {
-            const h = Math.max(6, Math.round((d.value / max) * 96));
-            return (
-              <div key={d.label} className="flex flex-col items-center flex-1">
-                <div className="w-full flex items-end justify-center h-24">
-                  <div
-                    className="w-[14px] rounded-t-md bg-[#1A4D4F]/90 shadow-sm"
-                    style={{ height: `${h}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-2 flex items-center justify-between px-1">
-          {data.map((d) => (
-            <div
-              key={`${d.label}-x`}
-              className="flex-1 text-center text-[11px] text-slate-400"
-            >
-              {d.label}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <p className="mt-2 text-xs text-slate-500">
-        Visuell placeholder – kopplas till riktig statistik senare.
-      </p>
-    </div>
-  );
-}
-
-function getUiStatus(progress, overallStatus) {
-  if (overallStatus === "paused") return "Pausad";
-  if ((progress?.percent || 0) >= 100) return "Klar";
-  if ((progress?.done || 0) > 0) return "Pågår";
-  return "Ej startad";
-}
+import { useDashboardHomeData } from "../features/dashboardHome/hooks/useDashboardHomeData";
 
 export default function DashboardHome() {
-  
-  const [activeOnboardings, setActiveOnboardings] = useState([]);
-  const [programs, setPrograms] = useState([]);
-
-  // resterande kolumner via /api/dashboard/feed
-  const [activityFeed, setActivityFeed] = useState([]);
-  const [upcoming, setUpcoming] = useState([]);
-  const [todos, setTodos] = useState([]);
-  const [goals, setGoals] = useState({ weekPercent: 0, monthPercent: 0 });
-  const [activity7d, setActivity7d] = useState([]);
-
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadData() {
-      try {
-        setLoading(true);
-
-        const [onboardingsData, programsData, feedData] = await Promise.all([
-          apiRequest("/api/onboardings?status=active", { method: "GET" }),
-          apiRequest("/api/programs", { method: "GET" }),
-          apiRequest("/api/dashboard/feed", { method: "GET" }).catch(() => null), // fallback
-        ]);
-
-       
-        const formatted = (Array.isArray(onboardingsData) ? onboardingsData : [])
-          .map((row) => {
-            const o = row?.onboarding;
-            const progress = row?.progress;
-            return {
-              id: o?._id,
-              name: o?.employee?.fullName || "",
-              role: o?.employee?.jobTitle || "",
-              status: getUiStatus(progress, o?.overallStatus),
-            };
-          })
-          .filter((item) => item.name);
-
-        setActiveOnboardings(formatted);
-
-        
-        setPrograms(Array.isArray(programsData) ? programsData : []);
-
-        
-        if (feedData) {
-          setActivityFeed(Array.isArray(feedData.activityFeed) ? feedData.activityFeed : []);
-          setUpcoming(Array.isArray(feedData.upcoming) ? feedData.upcoming : []);
-          setTodos(Array.isArray(feedData.todos) ? feedData.todos : []);
-          setGoals(feedData.goals || { weekPercent: 0, monthPercent: 0 });
-          setActivity7d(Array.isArray(feedData.activity7d) ? feedData.activity7d : []);
-        } else {
-          // om endpointen inte finns än: visa “tomt” istället för mock
-          setActivityFeed([]);
-          setUpcoming([]);
-          setTodos([]);
-          setGoals({ weekPercent: 0, monthPercent: 0 });
-          setActivity7d([]);
-        }
-      } catch (error) {
-        console.error("Failed to load data:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadData();
-  }, []);
-
-  const programsTotal = programs.length;
-
-  
-  const ongoingTotal = activeOnboardings.filter((a) => a.status === "Pågår").length;
-  const doneTotal = activeOnboardings.filter((a) => a.status === "Klar").length;
-  const needsActionTotal = activeOnboardings.filter((a) => a.status === "Ej startad").length;
+  const {
+    loading,
+    activeOnboardings,
+    activityFeed,
+    upcoming,
+    todos,
+    goals,
+    activity7d,
+    stats,
+  } = useDashboardHomeData();
 
   return (
     <div className="space-y-6">
-      {/* Header*/}
-      <div className="space-y-2">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+      <DashboardHeader />
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-            <Link to="/programs/new">
-              <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 transition">
-                <Plus className="h-4 w-4" />
-                Skapa nytt program
-              </button>
-            </Link>
-
-            <Link to="/onboarding">
-              <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
-                <Plus className="h-4 w-4" />
-                Ladda upp material
-              </button>
-            </Link>
-
-            <Link to="/onboarding/assign">
-              <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
-                <Plus className="h-4 w-4" />
-                Tilldela onboarding
-              </button>
-            </Link>
-          </div>
-        </div>
-
-        <p className="text-slate-500">
-          Snabb översikt av program, status och vad som behöver göras.
-        </p>
-      </div>
-
-      {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Program totalt" value={programsTotal} hint="Redo att återanvändas" />
-        <StatCard label="Pågående onboardings" value={ongoingTotal} hint="Aktiva just nu" />
-        <StatCard label="Klara" value={doneTotal} hint="Avslutade flöden" />
-        <StatCard label="Behöver åtgärd" value={needsActionTotal} hint="Ej startade onboardings" />
+        <StatCard
+          label="Program totalt"
+          value={stats.programsTotal}
+          hint="Redo att återanvändas"
+        />
+        <StatCard
+          label="Pågående onboardings"
+          value={stats.ongoingTotal}
+          hint="Aktiva just nu"
+        />
+        <StatCard label="Klara" value={stats.doneTotal} hint="Avslutade flöden" />
+        <StatCard
+          label="Behöver åtgärd"
+          value={stats.needsActionTotal}
+          hint="Ej startade onboardings"
+        />
       </div>
 
-      {/* Main grid */}
       <div className="grid gap-6 lg:grid-cols-3 items-start">
-        <Card className="lg:col-start-1 lg:row-start-1">
-          <CardHeader>
-            <CardTitle>Ny aktivitet</CardTitle>
-            <CardDescription>Senaste händelserna i systemet.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {loading ? (
-              <div className="text-sm text-slate-500">Laddar...</div>
-            ) : activityFeed.length > 0 ? (
-              activityFeed.map((e) => (
-                <div
-                  key={e.id}
-                  className="rounded-lg border border-slate-200 bg-white px-4 py-3"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold text-slate-900">{e.title}</div>
-                      <div className="text-sm text-slate-500">{e.subtitle}</div>
-                    </div>
-                    <div className="text-xs text-slate-400 whitespace-nowrap">{e.time}</div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-sm text-slate-500">Ingen aktivitet ännu</div>
-            )}
-          </CardContent>
-        </Card>
+        <SimpleInfoCard
+          title="Ny aktivitet"
+          description="Senaste händelserna i systemet."
+          className="lg:col-start-1 lg:row-start-1"
+        >
+          {loading ? (
+            <div className="text-sm text-slate-500">Laddar...</div>
+          ) : activityFeed.length > 0 ? (
+            activityFeed.map((e) => (
+              <ActivityCard
+                key={e.id}
+                title={e.title}
+                subtitle={e.subtitle}
+                rightText={e.time}
+              />
+            ))
+          ) : (
+            <div className="text-sm text-slate-500">Ingen aktivitet ännu</div>
+          )}
+        </SimpleInfoCard>
 
-        <Card className="lg:col-start-2 lg:row-start-1">
-          <CardHeader>
-            <CardTitle>Aktiva onboardings</CardTitle>
-            <CardDescription>Snabbstatus per nyanställd.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {loading ? (
-              <div className="text-sm text-slate-500">Laddar...</div>
-            ) : activeOnboardings.length > 0 ? (
-              activeOnboardings.map((a) => (
-                <Link key={a.id} to={`/onboardings/${a.id}`}>
-                  <ListItem
-                    title={a.name}
-                    subtitle={a.role}
-                    right={<StatusPill status={a.status} />}
-                  />
-                </Link>
-              ))
-            ) : (
-              <div className="text-sm text-slate-500">Inga aktiva onboardings</div>
-            )}
-          </CardContent>
-        </Card>
+        <SimpleInfoCard
+          title="Aktiva onboardings"
+          description="Snabbstatus per nyanställd."
+          className="lg:col-start-2 lg:row-start-1"
+        >
+          {loading ? (
+            <div className="text-sm text-slate-500">Laddar...</div>
+          ) : activeOnboardings.length > 0 ? (
+            activeOnboardings.map((a) => (
+              <Link key={a.id} to={`/onboardings/${a.id}`}>
+                <ListItem
+                  title={a.name}
+                  subtitle={a.role}
+                  right={<StatusPill status={a.status} />}
+                />
+              </Link>
+            ))
+          ) : (
+            <div className="text-sm text-slate-500">Inga aktiva onboardings</div>
+          )}
+        </SimpleInfoCard>
 
-        <Card className="lg:col-start-3 lg:row-start-1">
-          <CardHeader>
-            <CardTitle>Kommande</CardTitle>
-            <CardDescription>Det som händer snart.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {loading ? (
-              <div className="text-sm text-slate-500">Laddar...</div>
-            ) : upcoming.length > 0 ? (
-              upcoming.map((u) => (
-                <div
-                  key={u.id}
-                  className="rounded-lg border border-slate-200 bg-white px-4 py-3"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold text-slate-900">{u.title}</div>
-                      <div className="text-sm text-slate-500">{u.subtitle}</div>
-                    </div>
-                    <div className="text-xs text-slate-400 whitespace-nowrap">{u.when}</div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-sm text-slate-500">Inget kommande ännu</div>
-            )}
-          </CardContent>
-        </Card>
+        <SimpleInfoCard
+          title="Kommande"
+          description="Det som händer snart."
+          className="lg:col-start-3 lg:row-start-1"
+        >
+          {loading ? (
+            <div className="text-sm text-slate-500">Laddar...</div>
+          ) : upcoming.length > 0 ? (
+            upcoming.map((u) => (
+              <ActivityCard
+                key={u.id}
+                title={u.title}
+                subtitle={u.subtitle}
+                rightText={u.when}
+              />
+            ))
+          ) : (
+            <div className="text-sm text-slate-500">Inget kommande ännu</div>
+          )}
+        </SimpleInfoCard>
 
-        {/* Goals */}
-        <Card className="lg:col-start-1 lg:col-span-2 lg:row-start-2">
-          <CardHeader>
-            <CardTitle>Goals</CardTitle>
-            <CardDescription>Progress & aktivitet.</CardDescription>
-          </CardHeader>
-
-          <CardContent>
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <Donut value={goals.weekPercent} label="För veckan" />
-                <div className="mt-2 text-sm text-slate-500">Välj onboarding</div>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 bg-white p-3">
-                <Donut value={goals.monthPercent} label="För månaden" />
-                <div className="mt-2 text-sm text-slate-500">Avsluta onboardings</div>
-              </div>
+        
+        <SimpleInfoCard
+          title="Goals"
+          description="Progress & aktivitet."
+          className="lg:col-start-1 lg:col-span-2 lg:row-start-2"
+        >
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+            <div className="rounded-xl border border-slate-200 bg-white p-3">
+              <Donut value={goals.weekPercent} label="För veckan" />
+              <div className="mt-2 text-sm text-slate-500">Välj onboarding</div>
             </div>
 
-            <MiniBarChart data={activity7d} />
-          </CardContent>
-        </Card>
+            <div className="rounded-xl border border-slate-200 bg-white p-3">
+              <Donut value={goals.monthPercent} label="För månaden" />
+              <div className="mt-2 text-sm text-slate-500">Avsluta onboardings</div>
+            </div>
+          </div>
 
-        {/* Todo*/}
-        <Card className="lg:col-start-3 lg:row-start-2">
-          <CardHeader>
-            <CardTitle>Todo</CardTitle>
-            <CardDescription>Snabba åtgärder för HR/chef.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {loading ? (
-              <div className="text-sm text-slate-500">Laddar...</div>
-            ) : todos.length > 0 ? (
-              todos.map((t) => (
-                <Link key={t.id} to="/onboarding/assign">
-                  <ListItem
-                    title={t.title}
-                    subtitle={t.subtitle}
-                    right={<StatusPill status={t.status} />}
-                  />
-                </Link>
-              ))
-            ) : (
-              <div className="text-sm text-slate-500">Inga todos just nu</div>
-            )}
-          </CardContent>
-        </Card>
+          <MiniBarChart data={activity7d} />
+        </SimpleInfoCard>
+
+        {/*Och Todo tillbaka i kolumn 3 */}
+        <SimpleInfoCard
+          title="Todo"
+          description="Snabba åtgärder för HR/chef."
+          className="lg:col-start-3 lg:row-start-2"
+        >
+          {loading ? (
+            <div className="text-sm text-slate-500">Laddar...</div>
+          ) : todos.length > 0 ? (
+            todos.map((t) => (
+              <Link key={t.id} to="/onboarding/assign">
+                <ListItem
+                  title={t.title}
+                  subtitle={t.subtitle}
+                  right={<StatusPill status={t.status} />}
+                />
+              </Link>
+            ))
+          ) : (
+            <div className="text-sm text-slate-500">Inga todos just nu</div>
+          )}
+        </SimpleInfoCard>
       </div>
     </div>
   );
