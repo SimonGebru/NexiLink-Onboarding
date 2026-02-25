@@ -30,3 +30,7 @@ export function uploadProgramMaterials(programId, files) {
     body: formData,
   });
 }
+
+export async function fetchProgramById(id) {
+  return apiRequest(`/api/programs/${id}`, { method: "GET" });
+}

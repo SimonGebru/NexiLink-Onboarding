@@ -1,17 +1,32 @@
 export default function StatusPill({ status }) {
   const map = {
-    Klar: "bg-green-50 text-green-700 border border-green-200",
-    Pågår: "bg-blue-50 text-blue-700 border border-blue-200",
-    "Ej startad": "bg-slate-50 text-slate-700 border border-slate-200",
+    Klar: {
+      tone: "bg-emerald-100 text-emerald-700",
+      dot: "bg-emerald-500",
+    },
+    Pågår: {
+      tone: "bg-blue-100 text-blue-700",
+      dot: "bg-blue-500",
+    },
+    "Ej startad": {
+      tone: "bg-slate-100 text-slate-600",
+      dot: "bg-slate-400",
+    },
   };
+
+  const current = map[status] || map["Ej startad"];
 
   return (
     <span
       className={[
-        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium",
-        map[status] || map["Ej startad"],
+        "inline-flex items-center gap-1.5 rounded-full",
+        "px-3 py-1 text-xs font-medium transition-colors duration-200",
+        current.tone,
       ].join(" ")}
     >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${current.dot}`}
+      />
       {status}
     </span>
   );

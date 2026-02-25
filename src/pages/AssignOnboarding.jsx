@@ -6,8 +6,12 @@ import ProgressBar from "../features/assignOnboarding/components/ProgressBar";
 import TaskCard from "../features/assignOnboarding/components/TaskCard";
 import EmptyStateBox from "../features/assignOnboarding/components/EmptyStateBox";
 import NotesBox from "../features/assignOnboarding/components/NotesBox";
+import ProgramPreviewList from "../features/assignOnboarding/components/ProgramPreviewList";
 
 import { useAssignOnboarding } from "../features/assignOnboarding/hooks/useAssignOnboarding";
+
+
+import { useProgramPreview } from "../features/assignOnboarding/hooks/useProgramPreview";
 
 export default function AssignOnboarding() {
   const {
@@ -34,6 +38,9 @@ export default function AssignOnboarding() {
     createdOnboarding,
     progress,
   } = useAssignOnboarding();
+
+  
+  const { previewTasks, previewLoading, previewError } = useProgramPreview(selectedProgramId);
 
   return (
     <div className="w-full space-y-6">
@@ -142,7 +149,7 @@ export default function AssignOnboarding() {
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-5">
+            <CardContent className="space-y-5 max-h-[70vh] overflow-auto pr-2">
               {createdOnboarding ? (
                 <>
                   <ProgressBar value={progress?.percent || 0} />
@@ -161,6 +168,22 @@ export default function AssignOnboarding() {
                         />
                       ))}
                   </div>
+                </>
+              ) : selectedProgramId ? (
+                
+                <>
+                  {previewLoading ? (
+                    <div className="text-sm text-slate-500">Hämtar programmets checklista…</div>
+                  ) : previewError ? (
+                    <div className="text-sm text-red-600">{previewError}</div>
+                  ) : previewTasks.length > 0 ? (
+  <ProgramPreviewList tasks={previewTasks} />
+) : (
+                    <EmptyStateBox
+                      title="Ingen checklista i programmet"
+                      description="Detta program saknar checklistTemplate. Skapa en checklista på programsidan först."
+                    />
+                  )}
                 </>
               ) : selectedEmployee ? (
                 <EmptyStateBox

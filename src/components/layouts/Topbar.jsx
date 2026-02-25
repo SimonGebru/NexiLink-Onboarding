@@ -5,6 +5,10 @@ import NexilinkLogo from "../../assets/nexilink-logo.png";
 
 import { getUser, getInitials, logout } from "../../auth/auth";
 
+
+import NotificationBell from "../../features/notifications/components/NotificationBell";
+import { useNotifications } from "../../features/notifications/hooks/useNotifications";
+
 export default function Topbar({ onOpenMobile }) {
   const navigate = useNavigate();
 
@@ -14,7 +18,18 @@ export default function Topbar({ onOpenMobile }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
-  // Stäng dropdown om man klickar utanför
+  
+  const {
+    items,
+    unreadCount,
+    loading: notifLoading,
+    error: notifError,
+    refresh: refreshNotifs,
+    markOneRead,
+    markAllRead,
+  } = useNotifications({ limit: 20, pollMs: 15000 });
+
+  // Stäng user-dropdown om man klickar utanför
   useEffect(() => {
     function handleClickOutside(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -61,11 +76,18 @@ export default function Topbar({ onOpenMobile }) {
 
         {/* Right */}
         <div className="flex items-center gap-3">
-          <button className="relative p-2 rounded-lg hover:bg-slate-100 transition-colors">
-            <Bell className="h-5 w-5 text-slate-600" />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500" />
-          </button>
+          
+          <NotificationBell
+            unreadCount={unreadCount}
+            items={items}
+            loading={notifLoading}
+            error={notifError}
+            onRefresh={refreshNotifs}
+            onMarkOneRead={markOneRead}
+            onMarkAllRead={markAllRead}
+          />
 
+          {/* User menu */}
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setOpen((o) => !o)}
