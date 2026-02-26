@@ -6,7 +6,8 @@ import ModeCards from "../features/checklistBuilder/components/ModeCards";
 import TasksEditorSection from "../features/checklistBuilder/components/TasksEditorSection";
 
 import { useChecklistBuilderProgram } from "../features/checklistBuilder/hooks/useChecklistBuilderProgram";
-import { useChecklistGenerator } from "../features/checklistBuilder/hooks/useChecklistGenerator";
+import { useChecklistGenerator } from "../features/checklistBuilder/hooks/useChecklistGenerator.js";
+import { saveChecklistTemplate } from "../services/aiChecklist.js";
 
 export default function ChecklistBuilder() {
   const navigate = useNavigate();
@@ -54,9 +55,17 @@ export default function ChecklistBuilder() {
     navigate(`/programs/${id}/material`);
   }
 
-  function handleSaveChecklist() {
-    // TODO: POST/PATCH spara checklistan på programmet
-    navigate("/onboarding/assign");
+  async function handleSaveChecklist() {
+   const result = await saveChecklistTemplate(id, {
+      checklistTitle,
+      items: tasks,
+    });
+    
+    if (result.success) {
+      navigate("/onboarding/assign");
+    }
+    
+    return result;
   }
 
   return (
