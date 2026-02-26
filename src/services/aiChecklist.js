@@ -26,3 +26,14 @@ export function generateChecklistFromMaterials({
     body: JSON.stringify({ programId, materialIds, mode, sourceType }),
   });
 }
+
+/**
+ * Spara tasks till programmet
+ * PUT /api/programs/:id/checklist-template
+ */
+export function saveChecklistTemplate(programId, { checklistTitle, items }) {
+  return apiRequest(`/api/programs/${programId}/checklist-template`, {
+    method: "PUT",
+    body: JSON.stringify({ checklistTitle, items }),
+  });
+} 
