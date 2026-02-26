@@ -14,8 +14,16 @@ export default function UploadMaterial() {
   const { id } = useParams(); // programId från URL
   const navigate = useNavigate();
 
-  const { program, loadingProgram, programError, materials, loadProgram } =
-    useProgramMaterials(id);
+  
+  const {
+    program,
+    loadingProgram,
+    programError,
+    materials,
+    loadProgram,
+    removeMaterial,
+    deletingId,
+  } = useProgramMaterials(id);
 
   const {
     fileInputRef,
@@ -58,7 +66,7 @@ export default function UploadMaterial() {
       await uploadProgramMaterials(id, selectedFiles);
 
       clearSelectedFiles();
-      setUploadSuccess("Filer uppladdade! ✅");
+      setUploadSuccess("Filer uppladdade! ");
 
       // refresha så tabellen får riktiga materials
       await loadProgram();
@@ -91,7 +99,12 @@ export default function UploadMaterial() {
         onRemoveSelectedFile={removeSelectedFile}
       />
 
-      <MaterialsTable materials={materials} />
+      
+      <MaterialsTable
+        materials={materials}
+        onDelete={removeMaterial}
+        deletingId={deletingId}
+      />
 
       <FooterActions programId={id} onCancel={handleCancel} />
     </div>
