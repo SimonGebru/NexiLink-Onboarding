@@ -55,10 +55,10 @@ export default function ChecklistBuilder() {
     navigate(`/programs/${id}/material`);
   }
 
-  async function handleSaveChecklist() {
+  async function handleSaveChecklist(selectedTasks) {
    const result = await saveChecklistTemplate(id, {
       checklistTitle,
-      items: tasks,
+      items: selectedTasks,
     });
     
     if (result.success) {

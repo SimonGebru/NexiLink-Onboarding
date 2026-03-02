@@ -1,5 +1,5 @@
-import { Plus } from "lucide-react";
-
+import { Check, Plus } from "lucide-react";
+import { useState, useEffect } from "react";
 export default function TasksEditorSection({
   aiError,
   aiLoading,
@@ -8,6 +8,28 @@ export default function TasksEditorSection({
   onCancel,
   onSaveChecklist,
 }) {
+
+  const [selectedIndex, setSelectedIndex] = useState(
+    () => new Set(tasks.map((_, i) => i))
+  );
+
+  useEffect(() => {
+    setSelectedIndex(new Set(tasks.map((_, i) => i)))
+  }, [tasks]);
+
+  function toggleTask(index) {
+    setSelectedIndex((prev) => {
+      const next = new Set(prev);
+      next.has(index) ? next.delete(index) : next.add(index)
+      return next;
+    });
+};
+
+function handleSave() {
+  const selectedTasks = tasks.filter((_, i) => !selectedIndex.has(i))
+  onSaveChecklist(selectedTasks);
+}
+
   return (
     <section className="w-full bg-white p-4 mt-6 border-2 border-gray-200 rounded-lg">
       <h3 className="text-xl font-bold text-gray-900 mb-2">
@@ -33,7 +55,7 @@ export default function TasksEditorSection({
           </div>
         ) : null}
 
-        {tasks.map((task) => (
+        {tasks.map((task, index) => (
           <div
             key={task.order ?? task.title}
             className="py-5 border-b border-gray-200"
@@ -68,10 +90,11 @@ export default function TasksEditorSection({
 
               <button
                 type="button"
+                onClick={() => toggleTask(index)}
                 className="text-gray-400 text-sm hover:text-slate-900 ml-4"
-                title="Redigera / lägg till detaljer (sen)"
+                title={selectedIndex.has(index) ? "Markera" : "Avmarkera"}
               >
-                <Plus />
+                {selectedIndex.has(index) ? <Plus /> : <Check />}
               </button>
             </div>
           </div>
@@ -99,7 +122,7 @@ export default function TasksEditorSection({
 
         <button
           type="button"
-          onClick={onSaveChecklist}
+          onClick={handleSave}
           className="px-4 py-2 text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors"
         >
           Spara checklista
