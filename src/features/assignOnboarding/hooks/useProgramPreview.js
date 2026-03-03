@@ -57,6 +57,7 @@ export function useProgramPreview(selectedProgramId) {
         items: [], // finns inte i template (kommer när onboarding skapas)
         comment: "", // finns inte i template
         order: t?.order ?? null,
+        questions: t?.questions || [],
       }));
   }, [programPreview]);
 
