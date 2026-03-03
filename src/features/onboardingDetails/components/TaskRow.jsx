@@ -41,7 +41,16 @@ export default function TaskRow({ task, onboardingId, onPatched }) {
     <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-sm font-semibold text-slate-900">{task.title}</div>
+          <div className="text-sm font-semibold text-slate-900">
+            {task.title}
+          </div>
+          {task.questions?.length > 0 && (
+            <ul className="mb-2 list-disc list-inside text-sm text-slate-800">
+              {task.questions.map((q, i) => (
+                <li key={i}>{q}</li>
+              ))}
+            </ul>
+          )}
 
           {task.items?.length ? (
             <div className="mt-2 space-y-1">
@@ -70,7 +79,11 @@ export default function TaskRow({ task, onboardingId, onPatched }) {
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <div className="text-xs font-medium text-slate-500 mb-1">Status</div>
-          <Select className="h-11" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <Select
+            className="h-11"
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+          >
             <option value="Ej startad">Ej startad</option>
             <option value="Pågår">Pågår</option>
             <option value="Klar">Klar</option>
@@ -78,7 +91,9 @@ export default function TaskRow({ task, onboardingId, onPatched }) {
         </div>
 
         <div className="sm:col-span-2">
-          <div className="text-xs font-medium text-slate-500 mb-1">Kommentar</div>
+          <div className="text-xs font-medium text-slate-500 mb-1">
+            Kommentar
+          </div>
           <Textarea
             className="min-h-[90px]"
             value={comment}
