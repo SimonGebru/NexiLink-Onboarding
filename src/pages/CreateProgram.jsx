@@ -13,8 +13,9 @@ export default function CreateProgram() {
   const navigate = useNavigate();
 
   const {
-    units,
-    roles,
+    // ✅ nya namn från hooken
+    unitSuggestions,
+    roleSuggestions,
 
     title,
     unit,
@@ -30,6 +31,10 @@ export default function CreateProgram() {
 
     buildPayload,
   } = useCreateProgramForm();
+
+  // ✅ håll ProgramDetailsCard API oförändrat genom alias
+  const units = unitSuggestions;
+  const roles = roleSuggestions;
 
   const uploadModal = useModal();
   const filePicker = useFilePicker();

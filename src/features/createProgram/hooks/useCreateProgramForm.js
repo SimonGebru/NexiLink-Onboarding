@@ -1,7 +1,12 @@
 import { useMemo, useState } from "react";
 
+function normalizeInput(v) {
+  return String(v || "").replace(/\s+/g, " ").trim();
+}
+
 export function useCreateProgramForm() {
-  const units = useMemo(
+  
+  const unitSuggestions = useMemo(
     () => [
       "Individ- och familjeomsorg",
       "Barn och unga",
@@ -14,7 +19,7 @@ export function useCreateProgramForm() {
     []
   );
 
-  const roles = useMemo(
+  const roleSuggestions = useMemo(
     () => [
       "Socionom",
       "Socialsekreterare",
@@ -27,6 +32,7 @@ export function useCreateProgramForm() {
     []
   );
 
+  
   const [title, setTitle] = useState("");
   const [unit, setUnit] = useState("");
   const [role, setRole] = useState("");
@@ -34,21 +40,29 @@ export function useCreateProgramForm() {
   const [responsible, setResponsible] = useState("");
 
   function buildPayload() {
-    return {
-      name: title.trim(),
-      unit: unit || undefined,
-      targetRole: role || undefined,
-      description: description.trim() || undefined,
+    const nameClean = normalizeInput(title);
+    const unitClean = normalizeInput(unit);
+    const roleClean = normalizeInput(role);
+    const descClean = normalizeInput(description);
+    const responsibleClean = normalizeInput(responsible);
 
-      // responsible finns inte i schema än, sparas inte i DB just nu
-      responsible: responsible.trim() || undefined,
+    return {
+      name: nameClean, // required i schema
+
+      
+      unit: unitClean || undefined,
+      targetRole: roleClean || undefined,
+      description: descClean || undefined,
+
+      
+      responsible: responsibleClean || undefined,
     };
   }
 
   return {
-    // lists
-    units,
-    roles,
+    // suggestions
+    unitSuggestions,
+    roleSuggestions,
 
     // fields
     title,
@@ -64,7 +78,6 @@ export function useCreateProgramForm() {
     setDescription,
     setResponsible,
 
-    // helper
     buildPayload,
   };
 }

@@ -6,7 +6,7 @@ import {
   CardContent,
 } from "../../../components/ui/Card";
 import Button from "../../../components/ui/Button";
-import { FormField, Input, Select, Textarea } from "../../../components/ui/Form";
+import { FormField, Input, Textarea } from "../../../components/ui/Form";
 
 export default function ProgramDetailsCard({
   // lists
@@ -62,37 +62,39 @@ export default function ProgramDetailsCard({
 
         <div className="grid gap-6 sm:grid-cols-2">
           <FormField label="Enhet">
-            <Select
-              className="h-12 text-base"
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-            >
-              <option value="" disabled>
-                Välj en enhet
-              </option>
-              {units.map((u) => (
-                <option key={u} value={u}>
-                  {u}
-                </option>
-              ))}
-            </Select>
+            <>
+              {/* Fritt skrivfält med förslag via datalist */}
+              <Input
+                className="h-12 text-base"
+                placeholder="Välj eller skriv en enhet"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                list="unit-suggestions"
+              />
+              <datalist id="unit-suggestions">
+                {(units || []).map((u) => (
+                  <option key={u} value={u} />
+                ))}
+              </datalist>
+            </>
           </FormField>
 
           <FormField label="Roll">
-            <Select
-              className="h-12 text-base"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-            >
-              <option value="" disabled>
-                Välj en roll
-              </option>
-              {roles.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </Select>
+            <>
+              {/* Samma upplägg för roll */}
+              <Input
+                className="h-12 text-base"
+                placeholder="Välj eller skriv en roll"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                list="role-suggestions"
+              />
+              <datalist id="role-suggestions">
+                {(roles || []).map((r) => (
+                  <option key={r} value={r} />
+                ))}
+              </datalist>
+            </>
           </FormField>
         </div>
 
@@ -137,6 +139,7 @@ export default function ProgramDetailsCard({
         </div>
 
         <div className="pt-2 border-t border-slate-100" />
+
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
           <Button type="button" onClick={onCreateProgram} disabled={saving}>
             {saving ? "Skapar..." : "Skapa program"}
