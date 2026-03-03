@@ -34,3 +34,22 @@ export function uploadProgramMaterials(programId, files) {
 export async function fetchProgramById(id) {
   return apiRequest(`/api/programs/${id}`, { method: "GET" });
 }
+
+export function updateProgramMaterial(programId, materialId, payload) {
+  if (!programId) throw new Error("programId saknas");
+  if (!materialId) throw new Error("materialId saknas");
+
+  return apiRequest(`/api/programs/${programId}/materials/${materialId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteProgramMaterial(programId, materialId) {
+  if (!programId) throw new Error("programId saknas");
+  if (!materialId) throw new Error("materialId saknas");
+
+  return apiRequest(`/api/programs/${programId}/materials/${materialId}`, {
+    method: "DELETE",
+  });
+}

@@ -1,6 +1,51 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link as LinkIcon, Trash2, File } from "lucide-react";
 
-export default function MaterialsTable({ materials }) {
+function getFileTypeLabel(item) {
+  if (item?.type === "link") return "Länk";
+
+  const mime = (item?.mimeType || "").toLowerCase();
+  const name = (item?.fileName || item?.title || "").toLowerCase();
+
+  
+  if (mime.includes("pdf")) return "PDF";
+  if (mime.includes("word") || mime.includes("msword") || mime.includes("officedocument.wordprocessingml"))
+    return "Word";
+  if (mime.includes("excel") || mime.includes("spreadsheetml")) return "Excel";
+  if (mime.includes("powerpoint") || mime.includes("presentationml")) return "PowerPoint";
+  if (mime.startsWith("image/")) return "Bild";
+  if (mime.startsWith("text/")) return "Text";
+
+  // Fallback på filändelse
+  const ext = name.split(".").pop();
+  if (!ext || ext === name) return "Fil";
+  return ext.toUpperCase();
+}
+
+export default function MaterialsTable({
+  programId,
+  materials = [],
+  onDelete,
+}) {
+  // (inte sparat i backend än)
+  const [requiredMap, setRequiredMap] = useState({});
+
+  useEffect(() => {
+    const next = {};
+    for (const m of materials) {
+      if (m?._id) next[m._id] = Boolean(m.required);
+    }
+    setRequiredMap(next);
+  }, [materials]);
+
+  const rows = useMemo(() => {
+    return (materials || []).map((item, index) => {
+      const isLink = item?.type === "link";
+      const displayName = isLink ? item?.url : item?.fileName;
+      return { item, index, isLink, displayName };
+    });
+  }, [materials]);
+
   return (
     <section className="mb-10">
       <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -13,8 +58,7 @@ export default function MaterialsTable({ materials }) {
             <tr>
               <th className="px-5 py-3 font-semibold text-gray-600">Fil/Länk</th>
               <th className="px-5 py-3 font-semibold text-gray-600">Titel</th>
-              <th className="px-5 py-3 font-semibold text-gray-600">Typ</th>
-              <th className="px-5 py-3 font-semibold text-gray-600">Taggar</th>
+              <th className="px-5 py-3 font-semibold text-gray-600">Filtyp</th>
               <th className="px-5 py-3 font-semibold text-gray-600 text-center">
                 Obligatorisk
               </th>
@@ -25,20 +69,20 @@ export default function MaterialsTable({ materials }) {
           </thead>
 
           <tbody className="divide-y divide-gray-100">
-            {materials.length === 0 ? (
+            {rows.length === 0 ? (
               <tr>
-                <td className="px-5 py-6 text-gray-500" colSpan={6}>
+                <td className="px-5 py-6 text-gray-500" colSpan={5}>
                   Inget material uppladdat ännu.
                 </td>
               </tr>
             ) : (
-              materials.map((item, index) => {
-                const isLink = item?.type === "link";
-                const displayName = isLink ? item?.url : item?.fileName;
+              rows.map(({ item, index, isLink, displayName }) => {
+                const key = item?._id || `${displayName}-${index}`;
+                const typeLabel = getFileTypeLabel(item);
 
                 return (
                   <tr
-                    key={item?._id || `${displayName}-${index}`}
+                    key={key}
                     className="group hover:bg-gray-50 transition-colors"
                   >
                     <td className="px-5 py-3">
@@ -49,7 +93,7 @@ export default function MaterialsTable({ materials }) {
                           <File size={18} className="text-gray-400 flex-shrink-0" />
                         )}
                         <span
-                          className="text-gray-700 truncate max-w-[220px]"
+                          className="text-gray-700 truncate max-w-[260px]"
                           title={displayName}
                         >
                           {displayName}
@@ -64,42 +108,40 @@ export default function MaterialsTable({ materials }) {
                     </td>
 
                     <td className="px-5 py-3">
-                      <span className="text-gray-600">{isLink ? "Länk" : "Fil"}</span>
-                    </td>
-
-                    <td className="px-5 py-3">
-                      <div className="flex flex-wrap gap-1.5">
-                        {(item?.tags || []).length === 0 ? (
-                          <span className="text-xs text-gray-400">—</span>
-                        ) : (
-                          item.tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="px-2.5 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-xs font-medium text-gray-600"
-                            >
-                              {tag}
-                            </span>
-                          ))
-                        )}
-                      </div>
+                      <span className="text-gray-700">{typeLabel}</span>
                     </td>
 
                     <td className="px-5 py-3 text-center">
                       <input
                         type="checkbox"
-                        checked={Boolean(item?.required)}
-                        readOnly
+                        checked={Boolean(requiredMap[item?._id])}
+                        onChange={(e) => {
+                          const id = item?._id;
+                          if (!id) return;
+                          setRequiredMap((prev) => ({ ...prev, [id]: e.target.checked }));
+                        }}
                         className="w-4 h-4 text-gray-900 border-gray-300 rounded accent-gray-900"
-                        title="Vi kopplar detta när vi har PATCH för material"
+                        title="UI-only just nu (sparas inte än)"
                       />
                     </td>
 
                     <td className="px-5 py-3 text-center">
                       <button
                         type="button"
-                        className="p-1.5 text-gray-300 cursor-not-allowed rounded-md"
-                        title="Delete kommer när vi har backend-endpoint för att ta bort material"
-                        disabled
+                        onClick={() => {
+                          if (!item?._id) return;
+                          const ok = window.confirm("Ta bort detta material?");
+                          if (!ok) return;
+                          onDelete?.(item._id);
+                        }}
+                        disabled={!onDelete || !item?._id}
+                        className={[
+                          "p-1.5 rounded-md transition-colors",
+                          onDelete
+                            ? "text-gray-500 hover:text-red-600 hover:bg-red-50"
+                            : "text-gray-300 cursor-not-allowed",
+                        ].join(" ")}
+                        title="Ta bort"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -111,6 +153,9 @@ export default function MaterialsTable({ materials }) {
           </tbody>
         </table>
       </div>
+
+      {/* Optional: lite debug-info */}
+      {/* <pre className="text-xs text-gray-400 mt-2">programId: {programId}</pre> */}
     </section>
   );
 }
