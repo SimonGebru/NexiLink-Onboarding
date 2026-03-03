@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { apiRequest } from "../../../services/api";
 import { extractHeadingsFromText } from "../utils/extractHeadingsFromText";
 
@@ -18,6 +18,9 @@ export function useChecklistGenerator({
   const [checklistTitle, setChecklistTitle] = useState("");
   const [tasks, setTasks] = useState([]);
 
+  // Stoppar dubbel-trigger / parallella requests
+  const inFlightRef = useRef(false);
+
   function resetAiState() {
     setAiError("");
     setChecklistTitle("");
@@ -28,16 +31,13 @@ export function useChecklistGenerator({
   function handleToggleMaterialId(materialId) {
     const idStr = String(materialId);
 
-    setAiError(""); // om man får “max 5”-fel vill vi kunna rensa det när man klickar
+    setAiError("");
 
     setSelectedMaterialIds((prev) => {
       const exists = prev.includes(idStr);
 
-      if (exists) {
-        return prev.filter((x) => x !== idStr);
-      }
+      if (exists) return prev.filter((x) => x !== idStr);
 
-      // backend har max 5 materials
       if (prev.length >= 5) {
         setAiError("Du kan max välja 5 filer åt gången (backend-begränsning).");
         return prev;
@@ -55,28 +55,35 @@ export function useChecklistGenerator({
   }, [mode3InputType]);
 
   async function callGenerateChecklist(mode) {
+    // hårt skydd: om request redan körs → gör inget
+    if (inFlightRef.current || aiLoading) return;
+    inFlightRef.current = true;
+
     setSelectedMode(mode);
     setAiError("");
     setChecklistTitle("");
     setTasks([]);
 
     // 0) måste finnas uppladdade filer
-    if (aiMaterials.length === 0) {
+    if (!Array.isArray(aiMaterials) || aiMaterials.length === 0) {
       setAiError(
         "Inga uppladdade filer hittades. Ladda upp minst en fil (PDF/DOCX/PPTX) på materialsidan först."
       );
+      inFlightRef.current = false;
       return;
     }
 
     // 1) måste ha valt minst 1 material
     if (!Array.isArray(selectedMaterialIds) || selectedMaterialIds.length === 0) {
       setAiError("Välj minst 1 fil i listan (checkbox) innan du genererar.");
+      inFlightRef.current = false;
       return;
     }
 
     // 2) backend begränsning: max 5
     if (selectedMaterialIds.length > 5) {
       setAiError("Du kan max välja 5 filer åt gången (backend-begränsning).");
+      inFlightRef.current = false;
       return;
     }
 
@@ -93,6 +100,7 @@ export function useChecklistGenerator({
             "Kunde inte hitta tydliga rubriker automatiskt i det valda dokumentet (preview). " +
               "Byt till 'Fulltext' för Mode 3, eller se till att dokumentet har rubriker på egna rader."
           );
+          inFlightRef.current = false;
           return;
         }
       }
@@ -111,12 +119,18 @@ export function useChecklistGenerator({
         }),
       });
 
-      setChecklistTitle(result?.checklistTitle || "");
-      setTasks(Array.isArray(result?.items) ? result.items : []);
+      // Backend kan returnera antingen:
+      //  A) { checklistTitle, items }
+      //  B) { ok: true, result: { checklistTitle, items } }
+      const payload = result?.result ?? result;
+
+      setChecklistTitle(payload?.checklistTitle || "");
+      setTasks(Array.isArray(payload?.items) ? payload.items : []);
     } catch (err) {
       setAiError(err?.message || "AI-anropet misslyckades.");
     } finally {
       setAiLoading(false);
+      inFlightRef.current = false; // släpp låset
     }
   }
 
@@ -136,7 +150,7 @@ export function useChecklistGenerator({
     resetAiState,
     handleToggleMaterialId,
     callGenerateChecklist,
-    setAiError, // ibland skönt att kunna sätta från UI
+    setAiError,
     setChecklistTitle,
     setTasks,
   };

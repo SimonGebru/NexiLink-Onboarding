@@ -33,13 +33,17 @@ export async function apiRequest(path, options = {}) {
     data = await res.text().catch(() => null);
   }
 
-  if (!res.ok) {
+    if (!res.ok) {
     const message =
       (data && data.message) ||
+      (data && data.error && data.error.message) ||
       (typeof data === "string" && data) ||
       `Request failed (${res.status})`;
 
-    throw new Error(message);
+    const err = new Error(message);
+    err.status = res.status;
+    err.data = data;
+    throw err;
   }
 
   return data;
