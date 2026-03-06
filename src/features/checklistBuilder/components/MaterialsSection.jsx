@@ -1,4 +1,8 @@
+import useProgramMaterialAnalysis from "../hooks/useProgramMaterialAnalysis";
+
 export default function MaterialsSection({
+  programId,
+
   aiMaterials,
   selectedMaterialIds,
   handleToggleMaterialId,
@@ -12,6 +16,13 @@ export default function MaterialsSection({
 
   inputText,
 }) {
+  const { analysis, loading, error, loadLatest, runAnalysis } =
+    useProgramMaterialAnalysis({
+      programId,
+      materialIds: selectedMaterialIds,
+      sourceType: mode3InputType, 
+    });
+
   return (
     <section className="mt-6 border-2 border-gray-200 rounded-lg p-4 bg-white">
       <h2 className="text-lg font-semibold text-gray-900 mb-2">
@@ -20,17 +31,16 @@ export default function MaterialsSection({
 
       {aiMaterials.length === 0 ? (
         <p className="text-sm text-red-600">
-          Inga uppladdade filer hittades i detta program. Gå tillbaka till material-sidan
-          och ladda upp minst en fil (PDF/DOCX/PPTX).
+          Inga uppladdade filer hittades i detta program. Gå tillbaka till
+          material-sidan och ladda upp minst en fil (PDF/DOCX/PPTX).
         </p>
       ) : (
         <>
           <p className="text-sm text-gray-500 mb-3">
-            Välj vilka uppladdade dokument som ska användas för att generera checklistan.
-            (Förvalt: alla filer upp till 5 st)
+            Välj vilka uppladdade dokument som ska användas för att generera
+            checklistan. (Förvalt: alla filer upp till 5 st)
           </p>
 
-          {/* Checkbox-lista */}
           <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
             <div className="text-sm font-medium text-gray-700 mb-2">
               Välj filer (max 5):
@@ -65,7 +75,6 @@ export default function MaterialsSection({
             </div>
           </div>
 
-          {/* Dropdown (förhandsvisning/debug) */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center mt-4">
             <label className="text-sm font-medium text-gray-700">
               Dokument (förhandsvisning):
@@ -84,9 +93,10 @@ export default function MaterialsSection({
             </select>
           </div>
 
-          {/* Mode 3 input type toggle */}
           <div className="flex flex-wrap items-center gap-3 mt-4">
-            <span className="text-sm font-medium text-gray-700">Mode 3 input:</span>
+            <span className="text-sm font-medium text-gray-700">
+              Mode 3 input:
+            </span>
 
             <button
               type="button"
@@ -115,7 +125,6 @@ export default function MaterialsSection({
             <span className="text-xs text-gray-500">{mode3Hint}</span>
           </div>
 
-          {/* Debug/preview */}
           <details className="mt-4">
             <summary className="text-sm text-gray-600 cursor-pointer">
               Förhandsgranska underlag (debug)
@@ -125,6 +134,57 @@ export default function MaterialsSection({
               {String(inputText || "").length > 3000 ? "\n…(trimmat)" : ""}
             </pre>
           </details>
+
+          <div className="mt-6 border-t pt-4">
+            <h3 className="text-md font-semibold text-gray-900 mb-2">
+              Materialanalys (AI)
+            </h3>
+
+            <div className="flex gap-2 mb-3">
+              <button
+                type="button"
+                onClick={loadLatest}
+                disabled={loading}
+                className="px-3 py-1 border rounded text-sm"
+              >
+                Hämta senaste
+              </button>
+
+              <button
+                type="button"
+                onClick={() => runAnalysis(false)}
+                disabled={loading}
+                className="px-3 py-1 bg-slate-900 text-white rounded text-sm disabled:opacity-50"
+              >
+                Analysera
+              </button>
+
+              <button
+                type="button"
+                onClick={() => runAnalysis(true)}
+                disabled={loading}
+                className="px-3 py-1 border rounded text-sm disabled:opacity-50"
+              >
+                Kör om
+              </button>
+            </div>
+
+            {loading ? (
+              <p className="text-sm text-gray-500">Analyserar material...</p>
+            ) : null}
+
+            {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
+            {analysis?.status === "done" ? (
+              <pre className="mt-3 text-xs bg-gray-50 p-3 rounded max-h-60 overflow-auto">
+                {JSON.stringify(analysis.result, null, 2)}
+              </pre>
+            ) : analysis?.status ? (
+              <p className="text-sm text-gray-500">
+                Status: {analysis.status}
+              </p>
+            ) : null}
+          </div>
         </>
       )}
     </section>

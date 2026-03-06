@@ -95,16 +95,17 @@ export default function ChecklistBuilder() {
       </aside>
 
       <MaterialsSection
-        aiMaterials={aiMaterials}
-        selectedMaterialIds={selectedMaterialIds}
-        handleToggleMaterialId={handleToggleMaterialId}
-        selectedMaterialIndex={selectedMaterialIndex}
-        onSelectMaterial={(e) => handleSelectMaterial(e, resetAiState)}
-        mode3InputType={mode3InputType}
-        setMode3InputType={setMode3InputType}
-        mode3Hint={mode3Hint}
-        inputText={inputText}
-      />
+  programId={id}
+  aiMaterials={aiMaterials}
+  selectedMaterialIds={selectedMaterialIds}
+  handleToggleMaterialId={handleToggleMaterialId}
+  selectedMaterialIndex={selectedMaterialIndex}
+  onSelectMaterial={(e) => handleSelectMaterial(e, resetAiState)}
+  mode3InputType={mode3InputType}
+  setMode3InputType={setMode3InputType}
+  mode3Hint={mode3Hint}
+  inputText={inputText}
+/>
 
       <ModeCards
         aiLoading={aiLoading}
