@@ -96,7 +96,7 @@ export default function TasksEditorSection({
             key={task.order ?? task.title}
             className="py-5 border-b border-gray-200"
           >
-            /* Redigerings mode */
+            {/* Redigerings mode */}
             {editingIndex === index ? (
               <div className="flex flex-col gap-3">
                 <div>
