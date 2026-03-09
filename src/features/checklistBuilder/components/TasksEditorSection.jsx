@@ -98,6 +98,7 @@ export default function TasksEditorSection({
           >
             {/* Redigerings mode */}
             {editingIndex === index ? (
+              /* Redigerings mode */
               <div className="flex flex-col gap-3">
                 <div>
                   <label className="text-xs text-gray-500 mb-1 block">
