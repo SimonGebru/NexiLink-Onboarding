@@ -1,5 +1,53 @@
-import { Check, Edit, Plus } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Edit, Save, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+
+const PHASE_OPTIONS = [
+  { value: "", label: "Ingen fas" },
+  { value: "0-30", label: "0–30 dagar" },
+  { value: "31-60", label: "31–60 dagar" },
+  { value: "61-90", label: "61–90 dagar" },
+];
+
+function getPhaseLabel(phase) {
+  if (phase === "0-30") return "0–30 dagar";
+  if (phase === "31-60") return "31–60 dagar";
+  if (phase === "61-90") return "61–90 dagar";
+  return "Ingen fas";
+}
+
+function getPhaseBadgeClasses(phase) {
+  if (phase === "0-30") {
+    return "bg-green-50 text-green-700 border border-green-200";
+  }
+
+  if (phase === "31-60") {
+    return "bg-blue-50 text-blue-700 border border-blue-200";
+  }
+
+  if (phase === "61-90") {
+    return "bg-purple-50 text-purple-700 border border-purple-200";
+  }
+
+  return "bg-gray-50 text-gray-600 border border-gray-200";
+}
+
+function getPhaseSectionClasses(phase) {
+  if (phase === "0-30") return "border-green-200";
+  if (phase === "31-60") return "border-blue-200";
+  if (phase === "61-90") return "border-purple-200";
+  return "border-gray-200";
+}
+
+function normalizeTask(task, index) {
+  return {
+    title: task?.title || "",
+    description: task?.description || "",
+    order: typeof task?.order === "number" ? task.order : index + 1,
+    phase: task?.phase || null,
+    questions: Array.isArray(task?.questions) ? task.questions : [],
+  };
+}
+
 export default function TasksEditorSection({
   aiError,
   aiLoading,
@@ -8,25 +56,29 @@ export default function TasksEditorSection({
   onCancel,
   onSaveChecklist,
 }) {
-  const [selectedIndex, setSelectedIndex] = useState(
-    () => new Set(tasks.map((_, i) => i)),
-  );
-
-  const [editedTasks, setEditedTasks] = useState(tasks);
-
+  const [includedIndexes, setIncludedIndexes] = useState(new Set());
+  const [editedTasks, setEditedTasks] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
-
   const [draftTask, setDraftTask] = useState({});
 
   useEffect(() => {
-    setSelectedIndex(new Set(tasks.map((_, i) => i)));
-    setEditedTasks(tasks);
+    const normalizedTasks = tasks.map((task, index) => normalizeTask(task, index));
+    setEditedTasks(normalizedTasks);
+
+    // Alla tasks ingår från början.
+    setIncludedIndexes(new Set(normalizedTasks.map((_, i) => i)));
   }, [tasks]);
 
-  function toggleTask(index) {
-    setSelectedIndex((prev) => {
+  function toggleIncluded(index) {
+    setIncludedIndexes((prev) => {
       const next = new Set(prev);
-      next.has(index) ? next.delete(index) : next.add(index);
+
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+
       return next;
     });
   }
@@ -43,7 +95,7 @@ export default function TasksEditorSection({
 
   function saveEditing(index) {
     setEditedTasks((prev) =>
-      prev.map((task, i) => (i === index ? { ...draftTask } : task)),
+      prev.map((task, i) => (i === index ? normalizeTask(draftTask, i) : task))
     );
     setEditingIndex(null);
     setDraftTask({});
@@ -61,10 +113,72 @@ export default function TasksEditorSection({
     });
   }
 
-  function handleSave() {
-    const selectedTasks = editedTasks.filter((_, i) => !selectedIndex.has(i));
-    onSaveChecklist(selectedTasks);
+  function addNewTask() {
+    const nextTask = {
+      title: "",
+      description: "",
+      order: editedTasks.length + 1,
+      phase: null,
+      questions: [],
+    };
+
+    setEditedTasks((prev) => [...prev, nextTask]);
+
+    setIncludedIndexes((prev) => {
+      const next = new Set(prev);
+      next.add(editedTasks.length);
+      return next;
+    });
+
+    setEditingIndex(editedTasks.length);
+    setDraftTask(nextTask);
   }
+
+  function handleSave() {
+    const tasksToSave = editedTasks
+      .filter((_, i) => includedIndexes.has(i))
+      .map((task, index) => ({
+        ...task,
+        order: index + 1,
+        phase: task.phase || null,
+      }));
+
+    console.log("Tasks som ska sparas:", tasksToSave);
+
+    onSaveChecklist(tasksToSave);
+  }
+
+  const groupedEntries = useMemo(() => {
+    const buckets = {
+      "0-30": [],
+      "31-60": [],
+      "61-90": [],
+      none: [],
+    };
+
+    editedTasks.forEach((task, index) => {
+      if (task.phase === "0-30") {
+        buckets["0-30"].push({ task, index });
+      } else if (task.phase === "31-60") {
+        buckets["31-60"].push({ task, index });
+      } else if (task.phase === "61-90") {
+        buckets["61-90"].push({ task, index });
+      } else {
+        buckets.none.push({ task, index });
+      }
+    });
+
+    return buckets;
+  }, [editedTasks]);
+
+  const sections = [
+    { key: "0-30", title: "0–30 dagar" },
+    { key: "31-60", title: "31–60 dagar" },
+    { key: "61-90", title: "61–90 dagar" },
+    { key: "none", title: "Ingen fas" },
+  ];
+
+  const includedCount = includedIndexes.size;
 
   return (
     <section className="w-full bg-white p-4 mt-6 border-2 border-gray-200 rounded-lg">
@@ -73,13 +187,20 @@ export default function TasksEditorSection({
       </h3>
 
       {aiError ? <p className="text-sm text-red-600 mb-4">{aiError}</p> : null}
+
       {aiLoading ? (
         <p className="text-sm text-gray-500 mb-4">AI genererar checklista…</p>
       ) : null}
 
       {!aiLoading && checklistTitle ? (
-        <p className="text-sm text-gray-600 mb-4">
+        <p className="text-sm text-gray-600 mb-2">
           Titel: <span className="font-semibold">{checklistTitle}</span>
+        </p>
+      ) : null}
+
+      {!aiLoading && editedTasks.length > 0 ? (
+        <p className="text-sm text-gray-500 mb-4">
+          {includedCount} av {editedTasks.length} uppgifter kommer att sparas.
         </p>
       ) : null}
 
@@ -91,139 +212,215 @@ export default function TasksEditorSection({
           </div>
         ) : null}
 
-        {editedTasks.map((task, index) => (
-          <div
-            key={task.order ?? task.title}
-            className="py-5 border-b border-gray-200"
-          >
-            {/* Redigerings mode */}
-            {editingIndex === index ? (
-              /* Redigerings mode */
-              <div className="flex flex-col gap-3">
+        {sections.map((section) => {
+          const items = groupedEntries[section.key];
+
+          if (!items || items.length === 0) return null;
+
+          return (
+            <div key={section.key} className="mt-6 first:mt-4">
+              <div
+                className={`rounded-lg border ${getPhaseSectionClasses(
+                  section.key === "none" ? null : section.key
+                )} bg-gray-50 px-4 py-3 mb-3 flex items-center justify-between`}
+              >
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">
-                    Titel
-                  </label>
-                  <input
-                    className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-slate-400"
-                    value={draftTask.title ?? ""}
-                    onChange={(e) => handleDraftChange("title", e.target.value)}
-                  />
+                  <h4 className="text-base font-semibold text-gray-900">
+                    {section.title}
+                  </h4>
+                  <p className="text-xs text-gray-500">
+                    {items.length} uppgift{items.length !== 1 ? "er" : ""}
+                  </p>
                 </div>
 
-                {task.description !== undefined && (
-                  <div>
-                    <label className="text-xs text-gray-500 mb-1 block">
-                      Beskrivning
-                    </label>
-                    <textarea
-                      rows={2}
-                      className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-slate-400 resize-none"
-                      value={draftTask.description ?? ""}
-                      onChange={(e) =>
-                        handleDraftChange("description", e.target.value)
-                      }
-                    />
-                  </div>
-                )}
+                {section.key !== "none" ? (
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${getPhaseBadgeClasses(
+                      section.key
+                    )}`}
+                  >
+                    {getPhaseLabel(section.key)}
+                  </span>
+                ) : null}
+              </div>
 
-                {Array.isArray(draftTask.questions) &&
-                  draftTask.questions.length > 0 && (
-                    <div>
-                      <label className="text-xs text-gray-500 mb-1 block">
-                        Frågor
-                      </label>
-                      <ul className="flex flex-col gap-2">
-                        {draftTask.questions.slice(0, 3).map((q, qIdx) => (
-                          <li key={qIdx}>
-                            <input
-                              className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-slate-400"
-                              value={q}
-                              onChange={(e) =>
-                                handleQuestionChange(qIdx, e.target.value)
-                              }
-                            />
-                          </li>
-                        ))}
-                      </ul>
+              {items.map(({ task, index }) => (
+                <div
+                  key={`${task.order ?? "task"}-${index}`}
+                  className="py-5 border-b border-gray-200"
+                >
+                  {editingIndex === index ? (
+                    <div className="flex flex-col gap-3">
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">
+                          Titel
+                        </label>
+                        <input
+                          className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                          value={draftTask.title ?? ""}
+                          onChange={(e) =>
+                            handleDraftChange("title", e.target.value)
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">
+                          Fas
+                        </label>
+                        <select
+                          className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                          value={draftTask.phase ?? ""}
+                          onChange={(e) =>
+                            handleDraftChange("phase", e.target.value || null)
+                          }
+                        >
+                          {PHASE_OPTIONS.map((option) => (
+                            <option key={option.value || "none"} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {task.description !== undefined ? (
+                        <div>
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            Beskrivning
+                          </label>
+                          <textarea
+                            rows={2}
+                            className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-slate-400 resize-none"
+                            value={draftTask.description ?? ""}
+                            onChange={(e) =>
+                              handleDraftChange("description", e.target.value)
+                            }
+                          />
+                        </div>
+                      ) : null}
+
+                      {Array.isArray(draftTask.questions) &&
+                      draftTask.questions.length > 0 ? (
+                        <div>
+                          <label className="text-xs text-gray-500 mb-1 block">
+                            Frågor
+                          </label>
+                          <ul className="flex flex-col gap-2">
+                            {draftTask.questions.slice(0, 3).map((q, qIdx) => (
+                              <li key={qIdx}>
+                                <input
+                                  className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                                  value={q}
+                                  onChange={(e) =>
+                                    handleQuestionChange(qIdx, e.target.value)
+                                  }
+                                />
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+
+                      <div className="flex gap-2 justify-end mt-1">
+                        <button
+                          type="button"
+                          onClick={cancelEditing}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-300 rounded text-gray-600 hover:bg-gray-50 transition-colors"
+                        >
+                          <X size={14} />
+                          Avbryt
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => saveEditing(index)}
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs bg-slate-700 text-white rounded hover:bg-slate-900 transition-colors"
+                        >
+                          <Save size={14} />
+                          Spara
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={includedIndexes.has(index)}
+                            onChange={() => toggleIncluded(index)}
+                            className="mt-1 h-4 w-4 accent-slate-900"
+                          />
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <div className="text-gray-900 font-medium truncate">
+                                {task.order ? `${task.order}. ` : ""}
+                                {task.title}
+                              </div>
+
+                              <span
+                                className={`px-2.5 py-1 rounded-full text-xs font-medium ${getPhaseBadgeClasses(
+                                  task.phase
+                                )}`}
+                              >
+                                {getPhaseLabel(task.phase)}
+                              </span>
+
+                              <span
+                                className={`text-xs font-medium ${
+                                  includedIndexes.has(index)
+                                    ? "text-green-700"
+                                    : "text-gray-400"
+                                }`}
+                              >
+                                {includedIndexes.has(index)
+                                  ? "Ingår i checklistan"
+                                  : "Ingår inte"}
+                              </span>
+                            </div>
+
+                            {task.description ? (
+                              <div className="text-sm text-gray-500 mt-1">
+                                {task.description}
+                              </div>
+                            ) : null}
+
+                            {Array.isArray(task.questions) &&
+                            task.questions.length > 0 ? (
+                              <ul className="mt-2 list-disc pl-5 text-sm text-gray-600 space-y-1">
+                                {task.questions.slice(0, 3).map((q, idx) => (
+                                  <li key={idx}>{q}</li>
+                                ))}
+                              </ul>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => startEditing(index)}
+                          className="text-gray-400 hover:text-slate-700 transition-colors"
+                          title="Redigera"
+                        >
+                          <Edit size={18} />
+                        </button>
+                      </div>
                     </div>
                   )}
-
-                <div className="flex gap-2 justify-end mt-1">
-                  <button
-                    type="button"
-                    onClick={cancelEditing}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-300 rounded text-gray-600 hover:bg-gray-50 transition-colors"
-                  >
-                    <Plus /> Avbryt
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => saveEditing(index)}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs bg-slate-700 text-white rounded hover:bg-slate-900 transition-colors"
-                  >
-                    <Plus /> Spara
-                  </button>
                 </div>
-              </div>
-            ) : (
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="text-gray-900 font-medium truncate">
-                    {task.order ? `${task.order}. ` : ""}
-                    {task.title}
-                  </div>
-
-                  {task.description ? (
-                    <div className="text-sm text-gray-500 mt-1">
-                      {task.description}
-                    </div>
-                  ) : null}
-
-                  {task.phase ? (
-                    <div className="mt-2 text-xs text-gray-500">
-                      Fas: <span className="font-medium">{task.phase}</span>
-                    </div>
-                  ) : null}
-
-                  {Array.isArray(task.questions) &&
-                  task.questions.length > 0 ? (
-                    <ul className="mt-2 list-disc pl-5 text-sm text-gray-600 space-y-1">
-                      {task.questions.slice(0, 3).map((q, idx) => (
-                        <li key={idx}>{q}</li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => startEditing(index)}
-                    className="text-gray-400 hover:text-slate-700 transition-colors"
-                    title="Redigera"
-                  >
-                    <Edit />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => toggleTask(index)}
-                    className="text-gray-400 hover:text-slate-900 transition-colors"
-                    title={selectedIndex.has(index) ? "Markera" : "Avmarkera"}
-                  >
-                    {selectedIndex.has(index) ? <Plus /> : <Check />}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+              ))}
+            </div>
+          );
+        })}
       </section>
 
       <div className="mt-6 flex">
         <button
           type="button"
+          onClick={addNewTask}
           className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
         >
           <span className="text-lg leading-none">+</span>
