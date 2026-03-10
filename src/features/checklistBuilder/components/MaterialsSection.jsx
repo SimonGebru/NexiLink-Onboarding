@@ -1,5 +1,3 @@
-import useProgramMaterialAnalysis from "../hooks/useProgramMaterialAnalysis";
-
 export default function MaterialsSection({
   programId,
 
@@ -16,13 +14,6 @@ export default function MaterialsSection({
 
   inputText,
 }) {
-  const { analysis, loading, error, loadLatest, runAnalysis } =
-    useProgramMaterialAnalysis({
-      programId,
-      materialIds: selectedMaterialIds,
-      sourceType: mode3InputType, 
-    });
-
   return (
     <section className="mt-6 border-2 border-gray-200 rounded-lg p-4 bg-white">
       <h2 className="text-lg font-semibold text-gray-900 mb-2">
@@ -127,63 +118,17 @@ export default function MaterialsSection({
 
           <details className="mt-4">
             <summary className="text-sm text-gray-600 cursor-pointer">
-              Förhandsgranska underlag (debug)
+              Förhandsgranska underlag 
             </summary>
+
             <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-gray-50 p-3 text-xs text-gray-700 whitespace-pre-wrap">
               {String(inputText || "").slice(0, 3000)}
               {String(inputText || "").length > 3000 ? "\n…(trimmat)" : ""}
             </pre>
           </details>
 
-          <div className="mt-6 border-t pt-4">
-            <h3 className="text-md font-semibold text-gray-900 mb-2">
-              Materialanalys (AI)
-            </h3>
-
-            <div className="flex gap-2 mb-3">
-              <button
-                type="button"
-                onClick={loadLatest}
-                disabled={loading}
-                className="px-3 py-1 border rounded text-sm"
-              >
-                Hämta senaste
-              </button>
-
-              <button
-                type="button"
-                onClick={() => runAnalysis(false)}
-                disabled={loading}
-                className="px-3 py-1 bg-slate-900 text-white rounded text-sm disabled:opacity-50"
-              >
-                Analysera
-              </button>
-
-              <button
-                type="button"
-                onClick={() => runAnalysis(true)}
-                disabled={loading}
-                className="px-3 py-1 border rounded text-sm disabled:opacity-50"
-              >
-                Kör om
-              </button>
-            </div>
-
-            {loading ? (
-              <p className="text-sm text-gray-500">Analyserar material...</p>
-            ) : null}
-
-            {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-            {analysis?.status === "done" ? (
-              <pre className="mt-3 text-xs bg-gray-50 p-3 rounded max-h-60 overflow-auto">
-                {JSON.stringify(analysis.result, null, 2)}
-              </pre>
-            ) : analysis?.status ? (
-              <p className="text-sm text-gray-500">
-                Status: {analysis.status}
-              </p>
-            ) : null}
+          <div className="mt-4 text-xs text-gray-500 italic">
+          
           </div>
         </>
       )}

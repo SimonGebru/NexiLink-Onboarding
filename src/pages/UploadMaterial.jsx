@@ -106,7 +106,7 @@ export default function UploadMaterial() {
         deletingId={deletingId}
       />
 
-      <FooterActions programId={id} onCancel={handleCancel} />
+      <FooterActions programId={id} onCancel={handleCancel} materials={materials} />
     </div>
   );
 }
