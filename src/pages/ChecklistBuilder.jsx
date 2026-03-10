@@ -57,7 +57,7 @@ export default function ChecklistBuilder() {
 
   async function handleSaveChecklist(selectedTasks) {
    const result = await saveChecklistTemplate(id, {
-      checklistTitle,
+      checklistTitle: checklistTitle || program?.name || "Checklista",
       items: selectedTasks,
     });
     

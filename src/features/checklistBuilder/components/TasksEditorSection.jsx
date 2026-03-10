@@ -1,4 +1,4 @@
-import { Check, Edit, Plus } from "lucide-react";
+import { Check, Edit, Plus, X } from "lucide-react";
 import { useState, useEffect } from "react";
 export default function TasksEditorSection({
   aiError,
@@ -17,6 +17,14 @@ export default function TasksEditorSection({
   const [editingIndex, setEditingIndex] = useState(null);
 
   const [draftTask, setDraftTask] = useState({});
+
+  const [newTask, setNewTask] = useState({
+    title: "",
+    description: "",
+    questions: [""],
+  });
+
+  const [showAddForm, setShowAddForm] = useState(false);
 
   useEffect(() => {
     setSelectedIndex(new Set(tasks.map((_, i) => i)));
@@ -61,8 +69,64 @@ export default function TasksEditorSection({
     });
   }
 
+  // Hanterar ny fråga i eget task
+  function handleNewQuestion(qIndex, value) {
+    setNewTask((prev) => {
+      const updated = [...prev.questions];
+      updated[qIndex] = value;
+      return { ...prev, questions: updated };
+    });
+  }
+
+  // Lägger till en ny fråga i eget task
+  function addQuestionField() {
+    setNewTask((prev) => ({
+      ...prev,
+      questions: [...prev.questions, ""],
+    }));
+  }
+
+  // Tar bort en fråga i eget task
+  function removeQuestionField(qIndex) {
+    setNewTask((prev) => ({
+      ...prev,
+      questions: prev.questions.filter((_, i) => i !== qIndex),
+    }));
+  }
+
+  function removeTask(taskToRemove) {
+    const isSure = window.confirm("Är du säker på att du vill ta bort?");
+    if (!isSure) return;
+
+    setEditedTasks((prev) => prev.filter((_, i) => i !== taskToRemove));
+    setEditingIndex(null);
+    setDraftTask({});
+    setSelectedIndex((prev) => {
+      const next = new Set();
+      prev.forEach((i) => {
+        if (i < taskToRemove) next.add(i);
+        else if (i > taskToRemove) next.add(i - 1);
+      });
+      return next;
+    });
+  }
+
+  function handleAddTask() {
+    if (!newTask.title.trim()) return;
+
+    const taskToAdd = {
+      ...newTask,
+      questions: newTask.questions.filter((q) => q.trim() !== ""),
+      order: editedTasks.length + 1,
+    };
+    setEditedTasks((prev) => [...prev, taskToAdd]);
+    setSelectedIndex((prev) => new Set([...prev, editedTasks.length]));
+    setNewTask({ title: "", description: "", questions: [""] });
+    setShowAddForm(false);
+  }
+
   function handleSave() {
-    const selectedTasks = editedTasks.filter((_, i) => !selectedIndex.has(i));
+    const selectedTasks = editedTasks.filter((_, i) => selectedIndex.has(i));
     onSaveChecklist(selectedTasks);
   }
 
@@ -154,14 +218,21 @@ export default function TasksEditorSection({
                     onClick={cancelEditing}
                     className="flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-300 rounded text-gray-600 hover:bg-gray-50 transition-colors"
                   >
-                    <Plus /> Avbryt
+                  Avbryt
                   </button>
                   <button
                     type="button"
                     onClick={() => saveEditing(index)}
                     className="flex items-center gap-1 px-3 py-1.5 text-xs bg-slate-700 text-white rounded hover:bg-slate-900 transition-colors"
                   >
-                    <Plus /> Spara
+                  Spara
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeTask(index)}
+                    className="px-3 py-1.5 text-xs bg-slate-700 text-white rounded hover:bg-slate-900"
+                  >
+                    Radera
                   </button>
                 </div>
               </div>
@@ -209,9 +280,9 @@ export default function TasksEditorSection({
                     type="button"
                     onClick={() => toggleTask(index)}
                     className="text-gray-400 hover:text-slate-900 transition-colors"
-                    title={selectedIndex.has(index) ? "Markera" : "Avmarkera"}
+                    title={selectedIndex.has(index) ? "Avmarkera" : "Markera"}
                   >
-                    {selectedIndex.has(index) ? <Plus /> : <Check />}
+                    {selectedIndex.has(index) ? <Check /> : <Plus />}
                   </button>
                 </div>
               </div>
@@ -222,6 +293,7 @@ export default function TasksEditorSection({
 
       <div className="mt-6 flex">
         <button
+          onClick={() => setShowAddForm(true)}
           type="button"
           className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
         >
@@ -229,6 +301,89 @@ export default function TasksEditorSection({
           Lägg till uppgift
         </button>
       </div>
+
+      {showAddForm && (
+        /* Lägga till eget task */
+        <div className="mt-4 flex flex-col gap-3 border border-gray-200 rounded-lg p-4">
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Titel</label>
+            <input
+              className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+              placeholder="Skriv en titel..."
+              value={newTask.title}
+              onChange={(e) =>
+                setNewTask((prev) => ({ ...prev, title: e.target.value }))
+              }
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">
+              Beskrivning
+            </label>
+            <textarea
+              rows={2}
+              className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 resize-none"
+              placeholder="Valfri beskrivning..."
+              value={newTask.description}
+              onChange={(e) =>
+                setNewTask((prev) => ({ ...prev, description: e.target.value }))
+              }
+            />
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-500 mb-1 block">Frågor</label>
+            {newTask.questions.map((q, qIdx) => (
+              <div key={qIdx} className="flex gap-2 mb-2">
+                <input
+                  className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+                  placeholder={`Fråga ${qIdx + 1}...`}
+                  value={q}
+                  onChange={(e) => handleNewQuestion(qIdx, e.target.value)}
+                />
+                {newTask.questions.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeQuestionField(qIdx)}
+                    className="text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    <X />
+                  </button>
+                )}
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={addQuestionField}
+              className="text-xs text-slate-600 hover:text-slate-900 flex items-center gap-1 mt-1"
+            >
+              <Plus /> Lägg till fråga
+            </button>
+          </div>
+
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddForm(false);
+                setNewTask({ title: "", description: "", questions: [""] });
+              }}
+              className="px-3 py-1.5 text-xs border border-gray-300 rounded text-gray-600 hover:bg-gray-50"
+            >
+              Avbryt
+            </button>
+            <button
+              type="button"
+              onClick={handleAddTask}
+              className="px-3 py-1.5 text-xs bg-slate-700 text-white rounded hover:bg-slate-900"
+            >
+              Lägg till
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="mt-12 flex items-center justify-end gap-4">
         <button
