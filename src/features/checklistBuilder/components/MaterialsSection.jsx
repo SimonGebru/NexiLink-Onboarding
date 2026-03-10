@@ -118,7 +118,7 @@ export default function MaterialsSection({
 
           <details className="mt-4">
             <summary className="text-sm text-gray-600 cursor-pointer">
-              Förhandsgranska underlag (debug)
+              Förhandsgranska underlag 
             </summary>
 
             <pre className="mt-2 max-h-48 overflow-auto rounded-lg bg-gray-50 p-3 text-xs text-gray-700 whitespace-pre-wrap">
