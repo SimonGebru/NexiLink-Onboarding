@@ -8,6 +8,7 @@ import ListItem from "../features/dashboardHome/components/ListItem";
 import StatusPill from "../features/dashboardHome/components/StatusPill";
 import Donut from "../features/dashboardHome/components/Donut";
 import MiniBarChart from "../features/dashboardHome/components/MiniBarChart";
+import DropdownCard from "../features/dashboardHome/components/DropdownCard";
 
 import { useDashboardHomeData } from "../features/dashboardHome/hooks/useDashboardHomeData";
 
@@ -38,7 +39,11 @@ export default function DashboardHome() {
           value={stats.ongoingTotal}
           hint="Aktiva just nu"
         />
-        <StatCard label="Klara" value={stats.doneTotal} hint="Avslutade flöden" />
+        <StatCard
+          label="Klara"
+          value={stats.doneTotal}
+          hint="Avslutade flöden"
+        />
         <StatCard
           label="Behöver åtgärd"
           value={stats.needsActionTotal}
@@ -54,17 +59,20 @@ export default function DashboardHome() {
         >
           {loading ? (
             <div className="text-sm text-slate-500">Laddar...</div>
-          ) : activityFeed.length > 0 ? (
-            activityFeed.map((e) => (
-              <ActivityCard
-                key={e.id}
-                title={e.title}
-                subtitle={e.subtitle}
-                rightText={e.time}
-              />
-            ))
           ) : (
-            <div className="text-sm text-slate-500">Ingen aktivitet ännu</div>
+            <DropdownCard
+              items={activityFeed}
+              maxItems={4}
+              emptyMessage="Ingen aktivitet ännu"
+              renderItem={(e) => (
+                <ActivityCard
+                  key={e.id}
+                  title={e.title}
+                  subtitle={e.subtitle}
+                  rightText={e.time}
+                />
+              )}
+            />
           )}
         </SimpleInfoCard>
 
@@ -75,18 +83,21 @@ export default function DashboardHome() {
         >
           {loading ? (
             <div className="text-sm text-slate-500">Laddar...</div>
-          ) : activeOnboardings.length > 0 ? (
-            activeOnboardings.map((a) => (
-              <Link key={a.id} to={`/onboardings/${a.id}`}>
-                <ListItem
-                  title={a.name}
-                  subtitle={a.role}
-                  right={<StatusPill status={a.status} />}
-                />
-              </Link>
-            ))
           ) : (
-            <div className="text-sm text-slate-500">Inga aktiva onboardings</div>
+            <DropdownCard
+              items={activeOnboardings}
+              maxItems={4}
+              emptyMessage="Inga aktiva onboardings"
+              renderItem={(a) => (
+                <Link key={a.id} to={`/onboardings/${a.id}`}>
+                  <ListItem
+                    title={a.name}
+                    subtitle={a.role}
+                    right={<StatusPill status={a.status} />}
+                  />
+                </Link>
+              )}
+            />
           )}
         </SimpleInfoCard>
 
@@ -97,21 +108,23 @@ export default function DashboardHome() {
         >
           {loading ? (
             <div className="text-sm text-slate-500">Laddar...</div>
-          ) : upcoming.length > 0 ? (
-            upcoming.map((u) => (
-              <ActivityCard
-                key={u.id}
-                title={u.title}
-                subtitle={u.subtitle}
-                rightText={u.when}
-              />
-            ))
           ) : (
-            <div className="text-sm text-slate-500">Inget kommande ännu</div>
+            <DropdownCard
+              items={upcoming}
+              maxItems={4}
+              emptyMessage="Inget kommande ännu"
+              renderItem={(u) => (
+                <ActivityCard
+                  key={u.id}
+                  title={u.title}
+                  subtitle={u.subtitle}
+                  rightText={u.when}
+                />
+              )}
+            />
           )}
         </SimpleInfoCard>
 
-        
         <SimpleInfoCard
           title="Goals"
           description="Progress & aktivitet."
@@ -125,7 +138,9 @@ export default function DashboardHome() {
 
             <div className="rounded-xl border border-slate-200 bg-white p-3">
               <Donut value={goals.monthPercent} label="För månaden" />
-              <div className="mt-2 text-sm text-slate-500">Avsluta onboardings</div>
+              <div className="mt-2 text-sm text-slate-500">
+                Avsluta onboardings
+              </div>
             </div>
           </div>
 
