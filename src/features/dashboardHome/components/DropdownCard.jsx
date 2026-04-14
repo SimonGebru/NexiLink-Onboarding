@@ -24,7 +24,7 @@ export default function DropdownCard({
         <Button 
         variant="blue"
         onClick={() => setIsExpanded(!isExpanded)}>
-          {isExpanded ? "Visa mindre" : `Visa alla ${items.length}`}
+          {isExpanded ? "Visa mindre" : `Visa alla (${items.length})`}
         </Button>
       )}
     </div>
