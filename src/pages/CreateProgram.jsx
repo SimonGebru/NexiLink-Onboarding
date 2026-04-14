@@ -13,32 +13,26 @@ export default function CreateProgram() {
   const navigate = useNavigate();
 
   const {
-    // ✅ nya namn från hooken
     unitSuggestions,
     roleSuggestions,
-
     title,
     unit,
     role,
     description,
     responsible,
-
     setTitle,
     setUnit,
     setRole,
     setDescription,
     setResponsible,
-
     buildPayload,
   } = useCreateProgramForm();
 
-  // ✅ håll ProgramDetailsCard API oförändrat genom alias
   const units = unitSuggestions;
   const roles = roleSuggestions;
 
   const uploadModal = useModal();
   const filePicker = useFilePicker();
-
   const actions = useCreateProgramActions();
 
   function openUploadModal() {
@@ -52,35 +46,35 @@ export default function CreateProgram() {
   }
 
   return (
-    <div className="w-full space-y-10">
+    <div className="max-w-5xl mx-auto px-4 pb-12">
       <CreateProgramHeader />
 
-      <ProgramDetailsCard
-        units={units}
-        roles={roles}
-        title={title}
-        unit={unit}
-        role={role}
-        description={description}
-        responsible={responsible}
-        setTitle={setTitle}
-        setUnit={setUnit}
-        setRole={setRole}
-        setDescription={setDescription}
-        setResponsible={setResponsible}
-        saving={actions.saving}
-        error={actions.error}
-        onOpenUploadModal={openUploadModal}
-        onCreateProgram={() =>
-          actions.handleCreateAndGoToMaterial({
-            navigate,
-            title,
-            buildPayload,
-          })
-        }
-      />
-
-      <div className="h-1" />
+      <div className="mt-8">
+        <ProgramDetailsCard
+          units={units}
+          roles={roles}
+          title={title}
+          unit={unit}
+          role={role}
+          description={description}
+          responsible={responsible}
+          setTitle={setTitle}
+          setUnit={setUnit}
+          setRole={setRole}
+          setDescription={setDescription}
+          setResponsible={setResponsible}
+          saving={actions.saving}
+          error={actions.error}
+          onOpenUploadModal={openUploadModal}
+          onCreateProgram={() =>
+            actions.handleCreateAndGoToMaterial({
+              navigate,
+              title,
+              buildPayload,
+            })
+          }
+        />
+      </div>
 
       <UploadMaterialModal
         isOpen={uploadModal.isOpen}

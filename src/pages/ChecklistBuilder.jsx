@@ -1,6 +1,8 @@
 import { BadgeCheck } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import Stepper from "../components/ui/Stepper";
+
 import MaterialsSection from "../features/checklistBuilder/components/MaterialsSection";
 import ModeCards from "../features/checklistBuilder/components/ModeCards";
 import TasksEditorSection from "../features/checklistBuilder/components/TasksEditorSection";
@@ -8,6 +10,13 @@ import TasksEditorSection from "../features/checklistBuilder/components/TasksEdi
 import { useChecklistBuilderProgram } from "../features/checklistBuilder/hooks/useChecklistBuilderProgram";
 import { useChecklistGenerator } from "../features/checklistBuilder/hooks/useChecklistGenerator.js";
 import { saveChecklistTemplate } from "../services/aiChecklist.js";
+
+const programSteps = [
+  { label: "Detaljer" },
+  { label: "Material" },
+  { label: "Checklista" },
+  { label: "Klar" },
+];
 
 export default function ChecklistBuilder() {
   const navigate = useNavigate();
@@ -17,15 +26,11 @@ export default function ChecklistBuilder() {
     program,
     loadingProgram,
     programError,
-
     aiMaterials,
-
     selectedMaterialIndex,
     inputText,
-
     selectedMaterialIds,
     setSelectedMaterialIds,
-
     handleSelectMaterial,
   } = useChecklistBuilderProgram(id);
 
@@ -35,11 +40,9 @@ export default function ChecklistBuilder() {
     aiError,
     checklistTitle,
     tasks,
-
     mode3InputType,
     setMode3InputType,
     mode3Hint,
-
     resetAiState,
     handleToggleMaterialId,
     callGenerateChecklist,
@@ -56,56 +59,74 @@ export default function ChecklistBuilder() {
   }
 
   async function handleSaveChecklist(selectedTasks) {
-   const result = await saveChecklistTemplate(id, {
+    const result = await saveChecklistTemplate(id, {
       checklistTitle: checklistTitle || program?.name || "Checklista",
       items: selectedTasks,
     });
-    
+
     if (result.success) {
       navigate("/onboarding/assign");
     }
-    
+
     return result;
   }
 
   return (
     <div className="max-w-5xl mx-auto pb-12">
-      <header className="mb-10 space-y-1">
-        <h1 className="font-bold text-2xl">Checklistbyggare</h1>
+      <div className="mb-10 space-y-8">
+        <Stepper steps={programSteps} currentStep={2} />
 
-        {loadingProgram ? (
-          <p className="text-sm text-gray-500">Hämtar program…</p>
-        ) : programError ? (
-          <p className="text-sm text-red-600">{programError}</p>
-        ) : (
-          <p className="text-sm text-gray-600">
-            Program: <span className="font-semibold">{program?.name}</span>
-          </p>
-        )}
-      </header>
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-800">
+            Checklistbyggare
+          </h1>
 
-      {/* Confirmation */}
-      <aside className="border-2 border-gray-200 px-4">
-        <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 mt-2">
-          <BadgeCheck /> Klart!
+          {loadingProgram ? (
+            <p className="text-sm sm:text-base text-slate-500">
+              Hämtar program…
+            </p>
+          ) : programError ? (
+            <p className="text-sm sm:text-base text-red-600">{programError}</p>
+          ) : (
+            <>
+              <p className="text-sm sm:text-base text-slate-500">
+                Program:{" "}
+                <span className="font-semibold text-slate-700">
+                  {program?.name}
+                </span>
+              </p>
+
+              <p className="mx-auto max-w-2xl text-sm sm:text-base text-slate-500">
+                Generera, redigera och spara en checklista baserad på uppladdat
+                material.
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+
+      <aside className="border border-slate-200 rounded-lg px-4 py-3 bg-white">
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+          <BadgeCheck className="h-5 w-5" />
+          Klart!
         </h3>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-slate-500 mt-1">
           Programmet har en checklista kopplad.
         </p>
       </aside>
 
       <MaterialsSection
-  programId={id}
-  aiMaterials={aiMaterials}
-  selectedMaterialIds={selectedMaterialIds}
-  handleToggleMaterialId={handleToggleMaterialId}
-  selectedMaterialIndex={selectedMaterialIndex}
-  onSelectMaterial={(e) => handleSelectMaterial(e, resetAiState)}
-  mode3InputType={mode3InputType}
-  setMode3InputType={setMode3InputType}
-  mode3Hint={mode3Hint}
-  inputText={inputText}
-/>
+        programId={id}
+        aiMaterials={aiMaterials}
+        selectedMaterialIds={selectedMaterialIds}
+        handleToggleMaterialId={handleToggleMaterialId}
+        selectedMaterialIndex={selectedMaterialIndex}
+        onSelectMaterial={(e) => handleSelectMaterial(e, resetAiState)}
+        mode3InputType={mode3InputType}
+        setMode3InputType={setMode3InputType}
+        mode3Hint={mode3Hint}
+        inputText={inputText}
+      />
 
       <ModeCards
         aiLoading={aiLoading}

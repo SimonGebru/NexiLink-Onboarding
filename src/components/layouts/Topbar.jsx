@@ -67,7 +67,7 @@ export default function Topbar({ onOpenMobile }) {
 
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-slate-900">
-                Onboarding
+                
               </span>
               <span className="hidden sm:inline text-xs text-slate-500"></span>
             </div>
