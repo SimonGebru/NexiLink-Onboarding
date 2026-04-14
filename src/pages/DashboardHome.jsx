@@ -8,6 +8,7 @@ import ListItem from "../features/dashboardHome/components/ListItem";
 import StatusPill from "../features/dashboardHome/components/StatusPill";
 import Donut from "../features/dashboardHome/components/Donut";
 import MiniBarChart from "../features/dashboardHome/components/MiniBarChart";
+import DropdownCard from "../features/dashboardHome/components/DropdownCard";
 
 import { useDashboardHomeData } from "../features/dashboardHome/hooks/useDashboardHomeData";
 
@@ -58,19 +59,20 @@ export default function DashboardHome() {
         >
           {loading ? (
             <div className="text-sm text-slate-500">Laddar...</div>
-          ) : activityFeed.length > 0 ? (
-            <div className="space-y-3">
-              {activityFeed.map((e) => (
+          ) : (
+            <DropdownCard
+              items={activityFeed}
+              maxItems={4}
+              emptyMessage="Ingen aktivitet ännu"
+              renderItem={(e) => (
                 <ActivityCard
                   key={e.id}
                   title={e.title}
                   subtitle={e.subtitle}
                   rightText={e.time}
                 />
-              ))}
-            </div>
-          ) : (
-            <div className="text-sm text-slate-500">Ingen aktivitet ännu</div>
+              )}
+            />
           )}
         </SimpleInfoCard>
 
@@ -81,9 +83,12 @@ export default function DashboardHome() {
         >
           {loading ? (
             <div className="text-sm text-slate-500">Laddar...</div>
-          ) : activeOnboardings.length > 0 ? (
-            <div className="space-y-3">
-              {activeOnboardings.map((a) => (
+          ) : (
+            <DropdownCard
+              items={activeOnboardings}
+              maxItems={4}
+              emptyMessage="Inga aktiva onboardings"
+              renderItem={(a) => (
                 <Link key={a.id} to={`/onboardings/${a.id}`}>
                   <ListItem
                     title={a.name}
@@ -91,10 +96,8 @@ export default function DashboardHome() {
                     right={<StatusPill status={a.status} />}
                   />
                 </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="text-sm text-slate-500">Inga aktiva onboardings</div>
+              )}
+            />
           )}
         </SimpleInfoCard>
 
@@ -105,19 +108,20 @@ export default function DashboardHome() {
         >
           {loading ? (
             <div className="text-sm text-slate-500">Laddar...</div>
-          ) : upcoming.length > 0 ? (
-            <div className="space-y-3">
-              {upcoming.map((u) => (
+          ) : (
+            <DropdownCard
+              items={upcoming}
+              maxItems={4}
+              emptyMessage="Inget kommande ännu"
+              renderItem={(u) => (
                 <ActivityCard
                   key={u.id}
                   title={u.title}
                   subtitle={u.subtitle}
                   rightText={u.when}
                 />
-              ))}
-            </div>
-          ) : (
-            <div className="text-sm text-slate-500">Inget kommande ännu</div>
+              )}
+            />
           )}
         </SimpleInfoCard>
 
@@ -134,7 +138,7 @@ export default function DashboardHome() {
 
             <div className="rounded-xl border border-slate-200 bg-white p-4">
               <Donut value={goals.monthPercent} label="För månaden" />
-              <div className="mt-3 text-sm text-slate-500">
+              <div className="mt-2 text-sm text-slate-500">
                 Avsluta onboardings
               </div>
             </div>
