@@ -3,73 +3,68 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import StatusPill from "./StatusPill";
 
 export default function ProgramPreviewList({ tasks = [] }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
-  // Visa bara några rader när den är kollapsad
   const visibleTasks = useMemo(() => {
     if (isExpanded) return tasks;
-    return tasks.slice(0, 5); 
+    return tasks.slice(0, 5);
   }, [tasks, isExpanded]);
 
   const hiddenCount = Math.max(0, tasks.length - visibleTasks.length);
 
   return (
     <div className="space-y-3">
-      {/* Header + collapse */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-900">Checklista i programmet</p>
           <p className="text-xs text-slate-500">
-            Förhandsvisning – detta kopieras när du klickar “Starta”.
+            Förhandsvisning — kopieras vid start.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsExpanded((v) => !v)}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
-        >
-          <span>{isExpanded ? "Fäll ihop" : "Visa"}</span>
-          {isExpanded ? (
-            <ChevronUp className="h-4 w-4" />
-          ) : (
-            <ChevronDown className="h-4 w-4" />
-          )}
-        </button>
+        {tasks.length > 5 ? (
+          <button
+            type="button"
+            onClick={() => setIsExpanded((prev) => !prev)}
+            className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700"
+          >
+            <span>{isExpanded ? "Dölj" : "Visa"}</span>
+            {isExpanded ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+          </button>
+        ) : null}
       </div>
 
-      {/* List */}
-      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-        {visibleTasks.map((t, i) => (
+      <div className="space-y-2">
+        {visibleTasks.map((task, index) => (
           <div
-            key={t._id || i}
-            className={[
-              "flex items-center justify-between gap-3 px-4 py-3",
-              i !== 0 ? "border-t border-slate-100" : "",
-            ].join(" ")}
+            key={task._id || index}
+            className="flex items-center gap-3 rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-3"
           >
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-slate-400 w-6">
-                  {t.order ?? i + 1}.
-                </span>
-                <p className="text-sm font-medium text-slate-900 truncate">{t.title}</p>
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-500 shrink-0">
+              {task.order ?? index + 1}
+            </span>
+
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium leading-tight text-slate-900">
+                {task.title}
               </div>
 
-              <p className="text-xs text-slate-500 mt-1">
-                Skapas som en uppgift för {t.status || "Ej startad"}.
-              </p>
+              <div className="mt-0.5 text-[11px] text-slate-500">
+                Skapas som en uppgift för {task.status || "Ej startad"}.
+              </div>
             </div>
 
-            <StatusPill status={t.status || "Ej startad"} />
+            <StatusPill status={task.status || "Ej startad"} />
           </div>
         ))}
       </div>
 
-      {/* Collapsed helper text */}
       {!isExpanded && hiddenCount > 0 ? (
         <div className="text-xs text-slate-500">
-          +{hiddenCount} fler uppgifter (klicka “Visa”)
+          +{hiddenCount} fler uppgifter
         </div>
       ) : null}
     </div>
