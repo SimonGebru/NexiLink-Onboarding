@@ -1,5 +1,8 @@
 import { Edit, Plus, Save, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { SortableTaskItem } from "../../checklistBuilder/components/SortableTaskItem";
+import { DragDropProvider } from "@dnd-kit/react";
+import { move } from "@dnd-kit/helpers";
 
 const PHASE_OPTIONS = [
   { value: "", label: "Ingen fas" },
@@ -40,6 +43,7 @@ function getPhaseSectionClasses(phase) {
 
 function normalizeTask(task, index) {
   return {
+    id: task.id || crypto.randomUUID(),
     title: task?.title || "",
     description: task?.description || "",
     order: typeof task?.order === "number" ? task.order : index + 1,
@@ -90,6 +94,13 @@ export default function TasksEditorSection({
 
       return next;
     });
+  }
+
+  // Räknar ut nya ordningen i tasks efter en drag and drop
+  function handleDragEnd(event) {
+    setEditedTasks((items) => {
+      return move(items, event)
+    })
   }
 
   function startEditing(index) {
@@ -170,6 +181,7 @@ export default function TasksEditorSection({
 
   const taskToAdd = {
     ...newTask,
+    id: crypto.randomUUID(),
     title: newTask.title.trim(),
     description: newTask.description.trim(),
     phase: newTask.phase || null,
@@ -273,6 +285,7 @@ const includedCount = includedIndexes.size;
           </div>
         ) : null}
 
+        <DragDropProvider onDragEnd={handleDragEnd}>
         {sections.map((section) => {
           const items = groupedEntries[section.key];
 
@@ -305,7 +318,10 @@ const includedCount = includedIndexes.size;
                 ) : null}
               </div>
 
+           
+
               {items.map(({ task, index }) => (
+                <SortableTaskItem key={task.id} id={task.id} index={index}>
                 <div
                   key={`${task.order ?? "task"}-${index}`}
                   className="py-5 border-b border-gray-200"
@@ -480,10 +496,12 @@ const includedCount = includedIndexes.size;
 </div>
 )}
 </div>
+</SortableTaskItem>
 ))}
 </div>
 );
 })}
+</DragDropProvider>
       </section>
 
       <div className="mt-6 flex">
