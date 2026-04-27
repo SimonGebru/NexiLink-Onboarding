@@ -7,6 +7,8 @@ import {
   Settings,
 } from "lucide-react";
 
+import { getUser } from "../../auth/auth";
+
 // Logo assets
 import NexilinkText from "../../assets/Nexilink.png";
 import NexilinkIcon from "../../assets/log.png";
@@ -22,10 +24,10 @@ const getLinkClass = ({ isActive }) =>
       : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
   ].join(" ");
 
-function NavItems({ onNavigate }) {
+function AdminNavItems({ onNavigate }) {
   return (
     <nav className="mt-6 space-y-2">
-      <NavLink to="/" end className={getLinkClass} onClick={onNavigate}>
+      <NavLink to="/dashboard" end className={getLinkClass} onClick={onNavigate}>
         <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-200 group-hover:bg-white transition-colors">
           <LayoutDashboard className="h-4 w-4" />
         </div>
@@ -44,6 +46,35 @@ function NavItems({ onNavigate }) {
           <Users className="h-4 w-4" />
         </div>
         <span>Employees</span>
+      </NavLink>
+    </nav>
+  );
+}
+
+function EmployeeNavItems({ onNavigate }) {
+  return (
+    <nav className="mt-6 space-y-2">
+      <NavLink
+        to="/my/dashboard"
+        end
+        className={getLinkClass}
+        onClick={onNavigate}
+      >
+        <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-200 group-hover:bg-white transition-colors">
+          <LayoutDashboard className="h-4 w-4" />
+        </div>
+        <span>Min dashboard</span>
+      </NavLink>
+
+      <NavLink
+        to="/my/onboardings"
+        className={getLinkClass}
+        onClick={onNavigate}
+      >
+        <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-200 group-hover:bg-white transition-colors">
+          <ClipboardList className="h-4 w-4" />
+        </div>
+        <span>Mina onboardings</span>
       </NavLink>
     </nav>
   );
@@ -76,11 +107,28 @@ function SettingsLink({ onNavigate }) {
 export default function Sidebar({ mobileOpen, onCloseMobile }) {
   const handleNavigateMobile = () => onCloseMobile?.();
 
+  const user = getUser();
+  const role = user?.role;
+
+  const isEmployee = role === "employee";
+  const isAdmin = role === "admin";
+
+  function renderNavItems(onNavigate) {
+    if (isEmployee) {
+      return <EmployeeNavItems onNavigate={onNavigate} />;
+    }
+
+    if (isAdmin) {
+      return <AdminNavItems onNavigate={onNavigate} />;
+    }
+
+    return null;
+  }
+
   return (
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-64 shrink-0 md:flex-col border-r bg-white p-4 self-stretch min-h-0">
-        {/* 👇 Viktigt: gör hela sidebaren till en kolumn som fyller höjden */}
         <div className="flex flex-col h-full min-h-0">
           {/* Brand header */}
           <div className="flex items-center gap-3 px-2 py-2">
@@ -100,12 +148,12 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
             </div>
           </div>
 
-          {/* Nav area (kan scrolla) */}
+          {/* Nav area */}
           <div className="flex-1 overflow-y-auto pr-1 min-h-0">
-            <NavItems />
+            {renderNavItems()}
           </div>
 
-          {/* Settings längst ner */}
+          {/* Settings */}
           <div className="mt-auto px-2">
             <SettingsLink />
           </div>
@@ -131,7 +179,6 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
           mobileOpen ? "translate-x-0" : "-translate-x-full",
         ].join(" ")}
       >
-        {/* Mobile header */}
         <div className="h-14 border-b border-slate-200 px-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
@@ -159,10 +206,9 @@ export default function Sidebar({ mobileOpen, onCloseMobile }) {
           </button>
         </div>
 
-        {/* Mobile nav + settings längst ner */}
         <div className="p-4 h-[calc(100%-3.5rem)] min-h-0 flex flex-col">
           <div className="flex-1 overflow-y-auto min-h-0">
-            <NavItems onNavigate={handleNavigateMobile} />
+            {renderNavItems(handleNavigateMobile)}
           </div>
 
           <div className="mt-auto">

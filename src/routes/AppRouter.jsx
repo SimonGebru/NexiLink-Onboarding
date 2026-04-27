@@ -11,70 +11,104 @@ import ChecklistBuilder from "../pages/ChecklistBuilder.jsx";
 import OnboardingDetails from "../pages/OnboardingDetails";
 import Employees from "../pages/Employees";
 
+import UserOnboarding from "../pages/MyOnboardings.jsx";
+import UserOnboardingDetails from "../pages/UserOnboardingDetails";
+import UserDashboard from "../pages/UserDashboard";
+
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 
-import ProtectedRoute from "../auth/ProtectedRoute";
-import { isLoggedIn } from "../auth/auth";
+import RoleProtectedRoute from "../auth/RoleProtectedRoute";
+import { isLoggedIn, getUser } from "../auth/auth";
 
-function Placeholder({ title }) {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <h1 className="text-2xl font-semibold text-slate-900">{title}</h1>
-    </div>
-  );
+function getDefaultRouteByRole() {
+  const user = getUser();
+  const role = user?.role;
+
+  if (role === "employee") {
+    return "/my/dashboard";
+  }
+
+  return "/dashboard";
 }
 
 export default function AppRouter() {
+  const defaultRoute = getDefaultRouteByRole();
+
   return (
     <Routes>
-      {/* Public routes (utan DashboardLayout) */}
+      {/* Public routes */}
       <Route
         path="/login"
-        element={isLoggedIn() ? <Navigate to="/dashboard" replace /> : <Login />}
-      />
-      <Route
-        path="/register"
         element={
-          isLoggedIn() ? <Navigate to="/dashboard" replace /> : <Register />
+          isLoggedIn() ? <Navigate to={defaultRoute} replace /> : <Login />
         }
       />
 
-      {/* Start: skicka till login om inte inloggad, annars dashboard */}
+      <Route
+        path="/register"
+        element={
+          isLoggedIn() ? <Navigate to={defaultRoute} replace /> : <Register />
+        }
+      />
+
+      {/* Root redirect */}
       <Route
         path="/"
         element={
           isLoggedIn() ? (
-            <Navigate to="/dashboard" replace />
+            <Navigate to={defaultRoute} replace />
           ) : (
             <Navigate to="/login" replace />
           )
         }
       />
 
-      {/* Protected/App routes */}
-      <Route element={<ProtectedRoute />}>
+      {/* ADMIN ROUTES */}
+      <Route
+        element={
+          <RoleProtectedRoute
+            allowedRoles={["admin"]}
+            redirectTo="/my/dashboard"
+          />
+        }
+      >
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard" element={<DashboardHome />} />
           <Route path="/onboarding" element={<OnboardingOverview />} />
-
           <Route path="/employees" element={<Employees />} />
 
           <Route path="/programs/new" element={<CreateProgram />} />
           <Route path="/programs/:id/material" element={<UploadMaterial />} />
-          <Route path="/programs/:id/checklist" element={<ChecklistBuilder />} /> 
+          <Route path="/programs/:id/checklist" element={<ChecklistBuilder />} />
 
           <Route path="/onboarding/assign" element={<AssignOnboarding />} />
           <Route path="/onboardings/:id" element={<OnboardingDetails />} />
         </Route>
       </Route>
 
-      {/* Fallback: om okänd route  login om ej inloggad, annars dashboard */}
+      {/* EMPLOYEE ROUTES */}
+      <Route
+        element={
+          <RoleProtectedRoute
+            allowedRoles={["employee"]}
+            redirectTo="/dashboard"
+          />
+        }
+      >
+        <Route element={<DashboardLayout />}>
+          <Route path="/my/onboardings" element={<UserOnboarding />} />
+          <Route path="/my/dashboard" element={<UserDashboard />} />
+          <Route path="/my/onboarding/:id" element={<UserOnboardingDetails />} />
+        </Route>
+      </Route>
+
+      {/* Fallback */}
       <Route
         path="*"
         element={
           isLoggedIn() ? (
-            <Navigate to="/dashboard" replace />
+            <Navigate to={defaultRoute} replace />
           ) : (
             <Navigate to="/login" replace />
           )
