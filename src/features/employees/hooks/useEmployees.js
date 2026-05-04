@@ -4,6 +4,7 @@ import {
   createEmployee,
   updateEmployee,
   deleteEmployee,
+  createEmployeeInvite
 } from "../../../services/employeeService";
 
 export function useEmployees() {
@@ -100,6 +101,16 @@ export function useEmployees() {
     }
   }
 
+    async function handleInvite(emp) {
+    try {
+      setErr("");
+      const res = await createEmployeeInvite(emp._id, emp.email);
+      window.prompt("Kopiera länken och skicka till den anställde:", res.inviteUrl);
+    } catch (e) {
+      setErr(e?.message || "Kunde inte skapa inbjudan.");
+    }
+  }
+
   return {
     // data
     employees,
@@ -123,6 +134,7 @@ export function useEmployees() {
     // actions
     load,
     handleCreate,
+    handleInvite,
     handleToggleActive,
     handleQuickUpdate,
     setErr,

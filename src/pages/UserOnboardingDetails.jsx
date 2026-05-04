@@ -1,6 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Clock3, FileText, Link as LinkIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Clock3,
+  FileText,
+  Link as LinkIcon,
+} from "lucide-react";
 
 import {
   Card,
@@ -10,58 +16,61 @@ import {
   CardContent,
 } from "../components/ui/Card";
 
-const mockOnboarding = {
-  id: "1",
-  programName: "Socialsekreterare onboarding",
-  status: "Pågår",
-  startDate: "2026-04-21",
-  progress: {
-    percent: 30,
-    completed: 3,
-    total: 10,
-  },
-  tasks: [
-    {
-      id: "t1",
-      title: "Aktivera konto i verksamhetssystemet",
-      description: "Logga in, verifiera åtkomst och säkerställ att du kommer in i rätt system.",
-      status: "Klar",
-      items: [
-        { type: "file", label: "Guide – inloggning.pdf" },
-      ],
-      comment: "Inloggning fungerar."
-    },
-    {
-      id: "t2",
-      title: "Gå igenom rutinen för orosanmälan",
-      description: "Ta del av rutinen och förstå hur processen ser ut i praktiken.",
-      status: "Pågår",
-      items: [
-        { type: "file", label: "Rutin orosanmälan.pdf" },
-        { type: "link", label: "Intern länk till processöversikt" },
-      ],
-      comment: ""
-    },
-    {
-      id: "t3",
-      title: "Träffa handledare och mentor",
-      description: "Ha ett första möte för att gå igenom upplägg, förväntningar och stöd.",
-      status: "Ej startad",
-      items: [],
-      comment: ""
-    },
-    {
-      id: "t4",
-      title: "Dokumentera ett testärende enligt mall",
-      description: "Gå igenom hur dokumentation ska göras och fyll i ett testärende.",
-      status: "Ej startad",
-      items: [
-        { type: "file", label: "Dokumentationsmall.docx" },
-      ],
-      comment: ""
-    },
-  ],
-};
+import {
+  fetchMyOnboardingById,
+  updateMyOnboardingTask,
+} from "../services/meService";
+
+function computeProgress(tasks = []) {
+  const total = tasks.length;
+  const completed = tasks.filter((t) => t.status === "Klar").length;
+  const percent = total ? Math.round((completed / total) * 100) : 0;
+  return { total, completed, percent };
+}
+
+function normalizeOnboardingPayload(res) {
+  const src = res?.onboarding ?? res;
+  if (!src) return null;
+
+  const tasksRaw = Array.isArray(src.tasks) ? src.tasks : [];
+  const tasks = tasksRaw.map((t, idx) => ({
+    id: t?.id ?? t?._id ?? String(idx),
+    title: t?.title ?? "",
+    description: t?.description ?? "",
+    status: t?.status ?? "Ej startad",
+    items: Array.isArray(t?.items) ? t.items : [],
+    comment: t?.comment ?? "",
+    order: t?.order ?? idx,
+  }));
+
+  const progressRaw = src.progress;
+  const progress = progressRaw
+    ? {
+        total:
+          Number(progressRaw.total ?? progressRaw.tasksTotal ?? tasks.length) ||
+          tasks.length,
+        completed: Number(progressRaw.completed ?? progressRaw.done ?? 0) || 0,
+        percent: Number.isFinite(progressRaw.percent)
+          ? progressRaw.percent
+          : Number(progressRaw.total) || tasks.length
+            ? Math.round(
+                ((Number(progressRaw.completed ?? progressRaw.done ?? 0) || 0) /
+                  (Number(progressRaw.total) || tasks.length)) *
+                  100,
+              )
+            : 0,
+      }
+    : computeProgress(tasks);
+
+  return {
+    id: src.id ?? src._id,
+    programName: src.programName ?? src.program?.name ?? "—",
+    status: src.status ?? src.overallStatus ?? "Ej startad",
+    startDate: src.startDate ?? src.createdAt ?? null,
+    progress,
+    tasks,
+  };
+}
 
 function formatDate(dateString) {
   if (!dateString) return "—";
@@ -101,9 +110,9 @@ function getStatusIcon(status) {
 
 function sortTasks(tasks = []) {
   const order = {
-    "Pågår": 0,
+    Pågår: 0,
     "Ej startad": 1,
-    "Klar": 2,
+    Klar: 2,
   };
 
   return [...tasks].sort((a, b) => {
@@ -114,7 +123,35 @@ function sortTasks(tasks = []) {
   });
 }
 
-function UserTaskCard({ task }) {
+function UserTaskCard({ task, onboardingId, onUpdated }) {
+  const [status, setStatus] = useState(task.status);
+  const [comment, setComment] = useState(task.comment || "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setStatus(task.status);
+    setComment(task.comment || "");
+  }, [task.status, task.comment]);
+
+  async function handleSave() {
+    try {
+      setSaving(true);
+      setError("");
+
+      const res = await updateMyOnboardingTask(onboardingId, task.id, {
+        status,
+        comment,
+      });
+
+      onUpdated?.(res);
+    } catch (e) {
+      setError(e?.message || "Kunde inte spara uppgiften.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4">
       <div className="flex items-start justify-between gap-4">
@@ -130,7 +167,7 @@ function UserTaskCard({ task }) {
 
                 <span
                   className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getStatusPill(
-                    task.status
+                    task.status,
                   )}`}
                 >
                   {task.status}
@@ -164,12 +201,49 @@ function UserTaskCard({ task }) {
             </div>
           ) : null}
 
-          {task.comment ? (
-            <div className="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
-              <span className="font-medium text-slate-700">Kommentar: </span>
-              {task.comment}
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div>
+              <div className="text-xs font-medium text-slate-500 mb-1">
+                Status
+              </div>
+              <select
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
+                <option value="Ej startad">Ej startad</option>
+                <option value="Pågår">Pågår</option>
+                <option value="Klar">Klar</option>
+              </select>
             </div>
+
+            <div className="sm:col-span-2">
+              <div className="text-xs font-medium text-slate-500 mb-1">
+                Kommentar
+              </div>
+              <textarea
+                className="min-h-[90px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Lägg till kommentar..."
+              />
+            </div>
+          </div>
+
+          {error ? (
+            <div className="mt-2 text-sm text-red-600">{error}</div>
           ) : null}
+
+          <div className="mt-3 flex justify-end">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex h-10 items-center justify-center rounded-lg bg-[#1A4D4F] px-4 text-sm font-medium text-white hover:bg-[#1A4D4F]/90 disabled:opacity-60"
+            >
+              {saving ? "Sparar..." : "Spara"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -180,28 +254,84 @@ export default function UserOnboardingDetails() {
   const { id } = useParams();
   const [filter, setFilter] = useState("Alla");
 
-  const onboarding = mockOnboarding;
+  const [onboarding, setOnboarding] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+
+    async function load() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const res = await fetchMyOnboardingById(id);
+        if (!alive) return;
+
+        setOnboarding(normalizeOnboardingPayload(res));
+      } catch (e) {
+        if (!alive) return;
+        setError(e?.message || "Kunde inte hämta din onboarding.");
+      } finally {
+        if (!alive) return;
+        setLoading(false);
+      }
+    }
+
+    if (id) load();
+
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+
+  function handleUpdated(res) {
+    const next = normalizeOnboardingPayload(res);
+    if (next) {
+      setOnboarding(next);
+    }
+  }
 
   const filteredTasks = useMemo(() => {
-    const sorted = sortTasks(onboarding.tasks);
+    const sorted = sortTasks(onboarding?.tasks || []);
 
     if (filter === "Alla") return sorted;
     return sorted.filter((task) => task.status === filter);
-  }, [filter, onboarding.tasks]);
+  }, [filter, onboarding?.tasks]);
 
   const counts = useMemo(() => {
+    const tasks = onboarding?.tasks || [];
     return {
-      all: onboarding.tasks.length,
-      notStarted: onboarding.tasks.filter((task) => task.status === "Ej startad").length,
-      ongoing: onboarding.tasks.filter((task) => task.status === "Pågår").length,
-      done: onboarding.tasks.filter((task) => task.status === "Klar").length,
+      all: tasks.length,
+      notStarted: tasks.filter((task) => task.status === "Ej startad").length,
+      ongoing: tasks.filter((task) => task.status === "Pågår").length,
+      done: tasks.filter((task) => task.status === "Klar").length,
     };
-  }, [onboarding.tasks]);
+  }, [onboarding?.tasks]);
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-6">
+        Laddar onboarding...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">
+        {error}
+      </div>
+    );
+  }
+
+  if (!onboarding) return null;
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       <Link
-        to="/dashboard"
+        to="/my/dashboard"
         className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-900 transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -215,13 +345,14 @@ export default function UserOnboardingDetails() {
               {onboarding.programName}
             </h1>
             <p className="text-slate-500 mt-1">
-              Här ser du din onboarding, dina uppgifter och hur långt du har kommit.
+              Här ser du din onboarding, dina uppgifter och hur långt du har
+              kommit.
             </p>
           </div>
 
           <span
             className={`inline-flex rounded-full px-3 py-1.5 text-sm font-medium ${getStatusPill(
-              onboarding.status
+              onboarding.status,
             )}`}
           >
             {onboarding.status}
@@ -329,7 +460,12 @@ export default function UserOnboardingDetails() {
           {filteredTasks.length > 0 ? (
             <div className="space-y-4">
               {filteredTasks.map((task) => (
-                <UserTaskCard key={task.id} task={task} />
+                <UserTaskCard
+                  key={task.id}
+                  task={task}
+                  onboardingId={onboarding.id}
+                  onUpdated={handleUpdated}
+                />
               ))}
             </div>
           ) : (
@@ -345,9 +481,7 @@ export default function UserOnboardingDetails() {
         </CardContent>
       </Card>
 
-      <div className="text-xs text-slate-400">
-        Onboarding-ID: {id}
-      </div>
+      <div className="text-xs text-slate-400">Onboarding-ID: {id}</div>
     </div>
   );
 }

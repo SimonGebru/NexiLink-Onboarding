@@ -1,7 +1,5 @@
 import { apiRequest } from "./api";
 
-export function fetchMyOnboardings() {
-  return apiRequest("/api/onboardings/me", {
-    method: "GET",
-  });
+export async function fetchMyOnboardings() {
+  return apiRequest("/api/me/onboardings", { method: "GET" });
 }

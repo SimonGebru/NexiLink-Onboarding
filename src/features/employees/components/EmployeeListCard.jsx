@@ -10,6 +10,7 @@ export default function EmployeeListCard({
   onRefresh,
   onToggleActive,
   onQuickUpdate,
+  onInvite,
 }) {
   return (
     <Card>
@@ -17,7 +18,7 @@ export default function EmployeeListCard({
         <div className="flex items-start justify-between gap-4">
           <div>
             <CardTitle>Lista</CardTitle>
-            <CardDescription>GET /api/employees (filtrera aktiv/inaktiv i UI)</CardDescription>
+            <CardDescription></CardDescription>
           </div>
 
           <div className="flex items-center gap-2">
@@ -49,6 +50,7 @@ export default function EmployeeListCard({
               employee={e}
               onToggleActive={onToggleActive}
               onQuickUpdate={onQuickUpdate}
+              onInvite={onInvite}
             />
           ))
         )}

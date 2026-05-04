@@ -23,6 +23,7 @@ export default function Employees() {
     handleCreate,
     handleToggleActive,
     handleQuickUpdate,
+    handleInvite
   } = useEmployees();
 
   return (
@@ -59,6 +60,7 @@ export default function Employees() {
         onRefresh={load}
         onToggleActive={handleToggleActive}
         onQuickUpdate={handleQuickUpdate}
+        onInvite={handleInvite}
       />
     </div>
   );

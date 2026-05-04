@@ -13,3 +13,7 @@ export function registerUser({ name, email, password }) {
     body: JSON.stringify({ name, email, password }),
   });
 }
+
+export function getMe() {
+  return apiRequest("/api/auth/me", { method: "GET" });
+}

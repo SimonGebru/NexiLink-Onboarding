@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 
@@ -11,7 +10,8 @@ import {
   CardContent,
 } from "../components/ui/Card";
 
-import { loginUser } from "../services/authService";
+import { getMe, loginUser } from "../services/authService";
+import { setUser } from "../auth/auth";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -37,20 +37,39 @@ export default function Login() {
 
       const data = await loginUser({ email, password });
 
-const token = data?.token || data?.accessToken || data?.jwt;
+      const token = data?.token || data?.accessToken || data?.jwt;
 
-if (!token) {
-  throw new Error("Backend returnerade ingen token.");
-}
+      if (!token) {
+        throw new Error("Backend returnerade ingen token.");
+      }
 
-localStorage.setItem("token", token);
+      localStorage.setItem("token", token);
 
-if (data?.user) {
-  localStorage.setItem("user", JSON.stringify(data.user));
-}
+      let user = data?.user || null;
 
-      // Skicka vidare till valfri “start”-sida efter login
-      navigate("/onboarding");
+      // Säkerställer att vi har roll för employee i localstorage
+      const needsMeFetch =
+        !user?.role || (user?.role === "employee" && !user?.employeeId);
+
+      if (needsMeFetch) {
+        try {
+          const meRes = await getMe();
+          user = meRes?.user ?? meRes;
+        } catch {
+          console.log("getMe failed");
+        }
+      }
+
+      if (user) {
+        setUser(user);
+      }
+
+      // Skicka vidare beroende på roll
+      if (user?.role === "employee") {
+        navigate("/my/dashboard", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (err) {
       setError(err.message || "Inloggningen misslyckades.");
     } finally {

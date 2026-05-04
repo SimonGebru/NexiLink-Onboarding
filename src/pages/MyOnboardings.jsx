@@ -43,7 +43,16 @@ function UserOnboardingCard({ onboarding }) {
   const total = progress.total ?? 0;
 
   return (
-    <Link to={`/my/onboarding/${onboarding.id}`} className="block">
+    <Link
+      to={
+        onboarding?.id ? `/my/onboarding/${onboarding.id}` : "/my/onboardings"
+      }
+      className="block"
+      aria-disabled={!onboarding?.id}
+      onClick={(e) => {
+        if (!onboarding?.id) e.preventDefault();
+      }}
+    >
       <div className="group rounded-xl border border-slate-200 bg-white p-4 hover:bg-slate-50 transition-colors">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
@@ -54,7 +63,7 @@ function UserOnboardingCard({ onboarding }) {
 
               <span
                 className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getStatusPill(
-                  onboarding.status
+                  onboarding.status,
                 )}`}
               >
                 {onboarding.status}
@@ -115,7 +124,9 @@ export default function UserDashboard() {
           <div className="mt-2 text-2xl font-semibold text-slate-900">
             {stats.total}
           </div>
-          <div className="mt-1 text-sm text-slate-500">Alla onboardingprogram</div>
+          <div className="mt-1 text-sm text-slate-500">
+            Alla onboardingprogram
+          </div>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-5">
@@ -125,7 +136,9 @@ export default function UserDashboard() {
           <div className="mt-2 text-2xl font-semibold text-slate-900">
             {stats.ongoing}
           </div>
-          <div className="mt-1 text-sm text-slate-500">Du arbetar aktivt med dessa</div>
+          <div className="mt-1 text-sm text-slate-500">
+            Du arbetar aktivt med dessa
+          </div>
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-5">
@@ -145,7 +158,9 @@ export default function UserDashboard() {
           <div className="mt-2 text-2xl font-semibold text-slate-900">
             {stats.done}
           </div>
-          <div className="mt-1 text-sm text-slate-500">Slutförda onboardings</div>
+          <div className="mt-1 text-sm text-slate-500">
+            Slutförda onboardings
+          </div>
         </div>
       </div>
 
@@ -153,13 +168,16 @@ export default function UserDashboard() {
         <CardHeader>
           <CardTitle>Mina onboardings</CardTitle>
           <CardDescription>
-            Klicka på en onboarding för att se detaljer och följa dina uppgifter.
+            Klicka på en onboarding för att se detaljer och följa dina
+            uppgifter.
           </CardDescription>
         </CardHeader>
 
         <CardContent>
           {loading ? (
-            <div className="text-sm text-slate-500">Laddar dina onboardings…</div>
+            <div className="text-sm text-slate-500">
+              Laddar dina onboardings…
+            </div>
           ) : error ? (
             <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
               {error}

@@ -17,6 +17,15 @@ export function getUser() {
   }
 }
 
+export function setUser(user) {
+  if (!user) {
+    localStorage.removeItem("user");
+    return;
+  }
+
+  localStorage.setItem("user", JSON.stringify(user));
+}
+
 export function getInitials(name) {
   if (!name) return "?";
 

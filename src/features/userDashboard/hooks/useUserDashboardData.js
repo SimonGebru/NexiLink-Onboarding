@@ -1,11 +1,36 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchMyOnboardings } from "../../../services/userDashboardService";
 
+function normalizeProgress(raw) {
+  const p = raw ?? {};
+
+  const total = Number(p.total ?? p.tasksTotal ?? 0) || 0;
+  const completed = Number(p.completed ?? p.done ?? 0) || 0;
+
+  const hasTotal = total > 0;
+  const calculatedPercent = hasTotal ? Math.round((completed / total) * 100) : 0;
+  const percent = Number.isFinite(p.percent) ? p.percent : calculatedPercent;
+
+  return { total, completed, percent };
+}
+
+function normalizeOnboarding(raw) {
+  if (!raw) return null;
+
+  const id = raw.id ?? raw._id ?? raw.onboardingId ?? raw.onboarding?._id ?? raw.onboarding?.id;
+  const programName = raw.programName ?? raw.program?.name ?? "—";
+  const status = raw.status ?? raw.overallStatus ?? "Ej startad";
+  const startDate = raw.startDate ?? raw.createdAt ?? null;
+  const progress = normalizeProgress(raw.progress);
+
+  return { id, programName, status, startDate, progress };
+}
+
 function sortOnboardings(items = []) {
   const order = {
-    "Pågår": 0,
+    Pågår: 0,
     "Ej startad": 1,
-    "Klar": 2,
+    Klar: 2,
   };
 
   return [...items].sort((a, b) => {
@@ -33,8 +58,13 @@ export function useUserDashboardData() {
 
         if (!isMounted) return;
 
-        const safeOnboardings = Array.isArray(data) ? data : data?.onboardings || [];
-        setOnboardings(sortOnboardings(safeOnboardings));
+        const safeOnboardings = Array.isArray(data)
+          ? data
+          : data?.onboardings || [];
+        const normalized = safeOnboardings
+          .map(normalizeOnboarding)
+          .filter(Boolean);
+        setOnboardings(sortOnboardings(normalized));
       } catch (err) {
         if (!isMounted) return;
         setError(err?.message || "Kunde inte hämta dina onboardings.");

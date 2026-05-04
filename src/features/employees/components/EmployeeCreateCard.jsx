@@ -17,17 +17,16 @@ export default function EmployeeCreateCard({
       <CardHeader>
         <CardTitle>Skapa anställd</CardTitle>
         <CardDescription>
-          Motsvarar POST /api/employees (tidigare Postman).
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-3">
-          <FormField label="Fullständigt namn (fullName)">
+          <FormField label="Fullständigt namn">
             <Input value={fullName} onChange={(e) => setFullName(e.target.value)} />
           </FormField>
 
-          <FormField label="Titel (jobTitle)">
+          <FormField label="Titel">
             <Input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} />
           </FormField>
 

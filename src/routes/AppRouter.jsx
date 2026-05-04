@@ -10,6 +10,7 @@ import UploadMaterial from "../pages/UploadMaterial.jsx";
 import ChecklistBuilder from "../pages/ChecklistBuilder.jsx";
 import OnboardingDetails from "../pages/OnboardingDetails";
 import Employees from "../pages/Employees";
+import AcceptInvite from "../pages/AcceptInvite.jsx"
 
 import UserOnboarding from "../pages/MyOnboardings.jsx";
 import UserOnboardingDetails from "../pages/UserOnboardingDetails";
@@ -49,6 +50,13 @@ export default function AppRouter() {
         path="/register"
         element={
           isLoggedIn() ? <Navigate to={defaultRoute} replace /> : <Register />
+        }
+      />
+
+      <Route 
+        path="/accept-invite"
+        element={
+          isLoggedIn() ? <Navigate to={defaultRoute} replace /> : <AcceptInvite />
         }
       />
 

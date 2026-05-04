@@ -2,7 +2,7 @@ import Button from "../../../components/ui/Button";
 import { FormField, Input, Select } from "../../../components/ui/Form";
 import Pill from "./Pill";
 
-export default function EmployeeRow({ employee, onToggleActive, onQuickUpdate }) {
+export default function EmployeeRow({ employee, onToggleActive, onQuickUpdate, onInvite }) {
   const e = employee;
 
   return (
@@ -19,7 +19,7 @@ export default function EmployeeRow({ employee, onToggleActive, onQuickUpdate })
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <FormField label="jobTitle">
+        <FormField label="Titel">
           <Input
             defaultValue={e.jobTitle || ""}
             onBlur={(ev) => {
@@ -31,7 +31,7 @@ export default function EmployeeRow({ employee, onToggleActive, onQuickUpdate })
           />
         </FormField>
 
-        <FormField label="active">
+        <FormField label="Aktiv">
           <Select
             defaultValue={e.active === false ? "false" : "true"}
             onChange={(ev) => {
@@ -39,12 +39,20 @@ export default function EmployeeRow({ employee, onToggleActive, onQuickUpdate })
               onQuickUpdate(e, { active: nextActive });
             }}
           >
-            <option value="true">true</option>
-            <option value="false">false</option>
+            <option value="true">Ja</option>
+            <option value="false">Nej</option>
           </Select>
         </FormField>
 
         <div className="flex items-end justify-end gap-2">
+
+          <Button 
+            onClick={() => onInvite(e)} 
+            className="h-10 px-4"
+            disabled={e.active === false}
+          >
+            Bjud in
+          </Button>
           <Button onClick={() => onToggleActive(e)} className="h-10 px-4">
             {e.active === false ? "Återaktivera" : "Inaktivera"}
           </Button>
