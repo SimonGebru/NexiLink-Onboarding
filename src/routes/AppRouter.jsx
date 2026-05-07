@@ -18,6 +18,7 @@ import UserDashboard from "../pages/UserDashboard";
 
 import Login from "../pages/Login";
 import Register from "../pages/Register";
+import Inbox from "../pages/Inbox.jsx";
 
 import RoleProtectedRoute from "../auth/RoleProtectedRoute";
 import { isLoggedIn, getUser } from "../auth/auth";
@@ -92,6 +93,7 @@ export default function AppRouter() {
 
           <Route path="/onboarding/assign" element={<AssignOnboarding />} />
           <Route path="/onboardings/:id" element={<OnboardingDetails />} />
+          <Route path="/admin/inbox" element={<Inbox />} />
         </Route>
       </Route>
 
@@ -108,6 +110,7 @@ export default function AppRouter() {
           <Route path="/my/onboardings" element={<UserOnboarding />} />
           <Route path="/my/dashboard" element={<UserDashboard />} />
           <Route path="/my/onboarding/:id" element={<UserOnboardingDetails />} />
+          <Route path="/my/inbox" element={<Inbox />} />
         </Route>
       </Route>
 

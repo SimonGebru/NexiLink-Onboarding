@@ -5,6 +5,7 @@ import {
   Users,
   X,
   Settings,
+  MessageCircle
 } from "lucide-react";
 
 import { getUser } from "../../auth/auth";
@@ -47,6 +48,13 @@ function AdminNavItems({ onNavigate }) {
         </div>
         <span>Employees</span>
       </NavLink>
+
+      <NavLink to="/admin/Inbox" className={getLinkClass} onClick={onNavigate}>
+        <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-200 group-hover:bg-white transition-colors">
+          <MessageCircle className="h-4 w-4" />
+        </div>
+        <span>Meddelanden</span>
+      </NavLink>
     </nav>
   );
 }
@@ -75,6 +83,17 @@ function EmployeeNavItems({ onNavigate }) {
           <ClipboardList className="h-4 w-4" />
         </div>
         <span>Mina onboardings</span>
+      </NavLink>
+
+       <NavLink
+        to="/my/Inbox"
+        className={getLinkClass}
+        onClick={onNavigate}
+      >
+        <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-200 group-hover:bg-white transition-colors">
+          <ClipboardList className="h-4 w-4" />
+        </div>
+        <span>Meddelanden</span>
       </NavLink>
     </nav>
   );
