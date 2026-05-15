@@ -22,3 +22,7 @@ export function fetchOnboardings(params = {}) {
   const url = qs ? `/api/onboardings?${qs}` : "/api/onboardings";
   return apiRequest(url, { method: "GET" });
 }
+
+export function fetchMyOnboardings() {
+  return apiRequest("/api/onboardings/me", { method: "GET" });
+}

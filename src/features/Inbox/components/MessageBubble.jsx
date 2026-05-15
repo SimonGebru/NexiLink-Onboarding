@@ -5,38 +5,57 @@ export default function MessageBubble({
   time,
   isOwnMessage,
   isRead,
-  readByCount,
-  totalParticipants,
+  initials,
 }) {
   return (
     <div
-      className={`flex w-full mb-4 ${isOwnMessage ? "justify-end" : "justify-start"}`}
+      className={`flex w-full items-end gap-3 ${
+        isOwnMessage ? "justify-end" : "justify-start"
+      }`}
     >
+      {!isOwnMessage && (
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-600 text-xs font-bold text-white">
+          {initials}
+        </div>
+      )}
+
       <div
-        className={`max-w-[70%] rounded-lg px-3 py-2 ${
-          isOwnMessage
-            ? "bg-blue-500 text-white rounded-br-none"
-            : "bg-gray-200 text-gray-800 rounded-bl-none"
+        className={`flex max-w-[65%] flex-col ${
+          isOwnMessage ? "items-end" : "items-start"
         }`}
       >
-        <p>{text}</p>
-        <div className="flex items-center justify-between gap-2 mt-1">
-          <span
-            className={`text-xs ${isOwnMessage ? "text-blue-100" : "text-gray-500"}`}
-          >
-            {time}
-          </span>
+        <div
+          className={`rounded-2xl px-4 py-3 text-base shadow-sm ${
+            isOwnMessage
+              ? "rounded-br-md bg-blue-500 text-white"
+              : "rounded-bl-md border border-slate-200 bg-white text-slate-900"
+          }`}
+        >
+          {text}
+        </div>
+
+        <div className="mt-2 flex items-center gap-1.5 text-sm text-slate-500">
+          <span>{time}</span>
+
           {isOwnMessage && (
-            <div className="flex items-center">
+            <>
+              <span>•</span>
+              <span>{isRead ? "Läst" : "Skickat"}</span>
               {isRead ? (
-                <CheckCheck className="h-3.5 w-3.5 text-blue-100" />
+                <CheckCheck className="h-4 w-4 text-blue-500" />
               ) : (
-                <Check className="h-3.5 w-3.5 text-blue-100" />
+                <Check className="h-4 w-4 text-slate-400" />
               )}
-            </div>
+            </>
           )}
         </div>
       </div>
+
+      {isOwnMessage && (
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-600 text-xs font-bold text-white">
+          {initials}
+        </div>
+      )}
     </div>
   );
 }
