@@ -9,6 +9,7 @@ import StatusPill from "../features/dashboardHome/components/StatusPill";
 import Donut from "../features/dashboardHome/components/Donut";
 import MiniBarChart from "../features/dashboardHome/components/MiniBarChart";
 import DropdownCard from "../features/dashboardHome/components/DropdownCard";
+import Todolist from "../features/dashboardHome/components/Todolist";
 
 import { useDashboardHomeData } from "../features/dashboardHome/hooks/useDashboardHomeData";
 
@@ -22,6 +23,9 @@ export default function DashboardHome() {
     goals,
     activity7d,
     stats,
+    addTodo,
+    toggleTodo,
+    deleteTodo,
   } = useDashboardHomeData();
 
   return (
@@ -150,27 +154,24 @@ export default function DashboardHome() {
         </SimpleInfoCard>
 
         <SimpleInfoCard
-          title="Todo"
-          description="Snabba åtgärder för HR/chef."
-          className="lg:col-start-3 lg:row-start-2"
-        >
-          {loading ? (
-            <div className="text-sm text-slate-500">Laddar...</div>
-          ) : todos.length > 0 ? (
-            <div className="space-y-3">
-              {todos.map((t) => (
-                <Link key={t.id} to="/onboarding/assign">
-                  <ListItem
-                    title={t.title}
-                    subtitle={t.subtitle}
-                    right={<StatusPill status={t.status} />}
-                  />
-                </Link>
-              ))}
+          title={
+            <div className="flex items-center justify-between">
+              Att göra lista
+              <span className="text-xs font-medium bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full">
+                {todos.filter((t) => !t.completed).length} kvar
+              </span>
             </div>
-          ) : (
-            <div className="text-sm text-slate-500">Inga todos just nu</div>
-          )}
+          }
+          description="Snabba åtgärder för HR/chef."
+          className="lg:col-start-3 lg:row-start-2 "
+        >
+          <Todolist
+            todos={todos}
+            loading={loading}
+            onAdd={addTodo}
+            onToggle={toggleTodo}
+            onDelete={deleteTodo}
+          />
         </SimpleInfoCard>
       </div>
     </div>
