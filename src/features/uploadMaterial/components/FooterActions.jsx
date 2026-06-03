@@ -26,7 +26,7 @@ export default function FooterActions({ programId, onCancel, materials = [] }) {
     // Om det inte finns några filer alls går vi vidare ändå,
     // men checklistbyggaren kommer då visa att inget underlag finns.
     if (selectedMaterialIds.length === 0) {
-      navigate(`/programs/${programId}/checklist`);
+      navigate(`/programs/${programId}/builders`);
       return;
     }
 
@@ -39,7 +39,7 @@ export default function FooterActions({ programId, onCancel, materials = [] }) {
         force: false,
       });
 
-      navigate(`/programs/${programId}/checklist`);
+      navigate(`/programs/${programId}/builders`);
     } catch (err) {
       setAnalysisError(err?.message || "Kunde inte analysera materialet.");
     } finally {
@@ -65,7 +65,7 @@ export default function FooterActions({ programId, onCancel, materials = [] }) {
           disabled={analyzing}
           className="px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {analyzing ? "Analyserar material..." : "Fortsätt till checklistbyggaren"}
+          {analyzing ? "Analyserar material..." : "Nästa"}
         </button>
       </div>
 

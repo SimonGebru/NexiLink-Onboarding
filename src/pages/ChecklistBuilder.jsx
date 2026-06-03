@@ -55,7 +55,7 @@ export default function ChecklistBuilder() {
   });
 
   function handleCancel() {
-    navigate(`/programs/${id}/material`);
+    navigate(`/programs/${id}/builders`);
   }
 
   async function handleSaveChecklist(selectedTasks) {
@@ -65,7 +65,7 @@ export default function ChecklistBuilder() {
     });
 
     if (result.success) {
-      navigate("/onboarding/assign");
+      navigate(`/programs/${id}/builders`);
     }
 
     return result;

@@ -7,10 +7,12 @@ import OnboardingOverview from "../pages/OnboardingOverview";
 import CreateProgram from "../pages/CreateProgram";
 import AssignOnboarding from "../pages/AssignOnboarding";
 import UploadMaterial from "../pages/UploadMaterial.jsx";
+import ProgramBuilderSelection from "../pages/ProgramBuilderSelection.jsx";
 import ChecklistBuilder from "../pages/ChecklistBuilder.jsx";
+import QuizBuilder from "../pages/QuizBuilder.jsx";
 import OnboardingDetails from "../pages/OnboardingDetails";
 import Employees from "../pages/Employees";
-import AcceptInvite from "../pages/AcceptInvite.jsx"
+import AcceptInvite from "../pages/AcceptInvite.jsx";
 
 import UserOnboarding from "../pages/MyOnboardings.jsx";
 import UserOnboardingDetails from "../pages/UserOnboardingDetails";
@@ -54,10 +56,14 @@ export default function AppRouter() {
         }
       />
 
-      <Route 
+      <Route
         path="/accept-invite"
         element={
-          isLoggedIn() ? <Navigate to={defaultRoute} replace /> : <AcceptInvite />
+          isLoggedIn() ? (
+            <Navigate to={defaultRoute} replace />
+          ) : (
+            <AcceptInvite />
+          )
         }
       />
 
@@ -89,7 +95,15 @@ export default function AppRouter() {
 
           <Route path="/programs/new" element={<CreateProgram />} />
           <Route path="/programs/:id/material" element={<UploadMaterial />} />
-          <Route path="/programs/:id/checklist" element={<ChecklistBuilder />} />
+          <Route
+            path="/programs/:id/builders"
+            element={<ProgramBuilderSelection />}
+          />
+          <Route
+            path="/programs/:id/checklist"
+            element={<ChecklistBuilder />}
+          />
+          <Route path="/programs/:id/quiz" element={<QuizBuilder />} />
 
           <Route path="/onboarding/assign" element={<AssignOnboarding />} />
           <Route path="/onboardings/:id" element={<OnboardingDetails />} />
@@ -109,7 +123,10 @@ export default function AppRouter() {
         <Route element={<DashboardLayout />}>
           <Route path="/my/onboardings" element={<UserOnboarding />} />
           <Route path="/my/dashboard" element={<UserDashboard />} />
-          <Route path="/my/onboarding/:id" element={<UserOnboardingDetails />} />
+          <Route
+            path="/my/onboarding/:id"
+            element={<UserOnboardingDetails />}
+          />
           <Route path="/my/inbox" element={<Inbox />} />
         </Route>
       </Route>
