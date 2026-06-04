@@ -3,25 +3,19 @@ import {
   ArrowLeft,
   Calendar,
   ClipboardList,
+  HelpCircle,
   Sparkles,
   User,
   UserPlus,
 } from "lucide-react";
 
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "../components/ui/Card";
+import { Card, CardContent } from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import { FormField, Select, Input } from "../components/ui/Form";
 
 import ProgressBar from "../features/assignOnboarding/components/ProgressBar";
 import TaskCard from "../features/assignOnboarding/components/TaskCard";
 import EmptyStateBox from "../features/assignOnboarding/components/EmptyStateBox";
-import NotesBox from "../features/assignOnboarding/components/NotesBox";
 import ProgramPreviewList from "../features/assignOnboarding/components/ProgramPreviewList";
 
 import { useAssignOnboarding } from "../features/assignOnboarding/hooks/useAssignOnboarding";
@@ -54,6 +48,15 @@ export default function AssignOnboarding() {
     selectedEmployee,
     selectedProgram,
 
+    latestQuiz,
+    loadingQuiz,
+    quizError,
+    includeQuiz,
+    setIncludeQuiz,
+    includeChecklist,
+    setIncludeChecklist,
+    programHasQuiz,
+
     canStart,
     submitting,
     submitError,
@@ -69,6 +72,7 @@ export default function AssignOnboarding() {
   const summaryName = selectedEmployee?.fullName || "Välj anställd";
   const summaryProgram = selectedProgram?.name || "Välj program";
   const summaryDate = startDate || "Välj startdatum";
+  const programHasChecklist = previewTasks.length > 0;
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -110,8 +114,6 @@ export default function AssignOnboarding() {
             <span className="h-1 w-1 rounded-full bg-slate-300" />
             <span className="text-slate-500">{summaryDate}</span>
           </div>
-
-          
         </div>
 
         {listError ? (
@@ -189,15 +191,89 @@ export default function AssignOnboarding() {
                 />
               </FormField>
 
+              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                <h3 className="mb-3 text-sm font-semibold text-slate-900">
+                  Innehåll att tilldela
+                </h3>
+
+                <div className="space-y-3">
+                  <label
+                    className={[
+                      "flex items-start gap-3 rounded-xl border bg-white p-3",
+                      programHasChecklist
+                        ? "border-slate-200"
+                        : "border-slate-200 opacity-60",
+                    ].join(" ")}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={includeChecklist}
+                      onChange={(e) => setIncludeChecklist(e.target.checked)}
+                      disabled={!programHasChecklist}
+                      className="mt-1 h-4 w-4 rounded border-slate-300"
+                    />
+
+                    <div>
+                      <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                        <ClipboardList className="h-4 w-4 text-blue-600" />
+                        Checklista
+                      </div>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        {programHasChecklist
+                          ? `${previewTasks.length} uppgifter kommer kopieras från programmet.`
+                          : "Programmet saknar checklista."}
+                      </p>
+                    </div>
+                  </label>
+
+                  <label
+                    className={[
+                      "flex items-start gap-3 rounded-xl border bg-white p-3",
+                      programHasQuiz
+                        ? "border-slate-200"
+                        : "border-slate-200 opacity-60",
+                    ].join(" ")}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={includeQuiz}
+                      onChange={(e) => setIncludeQuiz(e.target.checked)}
+                      disabled={!programHasQuiz || loadingQuiz}
+                      className="mt-1 h-4 w-4 rounded border-slate-300"
+                    />
+
+                    <div>
+                      <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                        <HelpCircle className="h-4 w-4 text-blue-600" />
+                        Quiz
+                      </div>
+
+                      <p className="mt-1 text-xs text-slate-500">
+                        {loadingQuiz
+                          ? "Hämtar quiz för valt program..."
+                          : programHasQuiz
+                            ? `${latestQuiz?.quiz?.title || "Quiz"} kommer tilldelas.`
+                            : "Inget quiz finns för detta program."}
+                      </p>
+
+                      {quizError ? (
+                        <p className="mt-1 text-xs text-red-600">{quizError}</p>
+                      ) : null}
+                    </div>
+                  </label>
+                </div>
+              </div>
+
               <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4 flex items-start gap-3">
                 <div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-600 shrink-0">
                   <Calendar className="h-3.5 w-3.5" />
                 </div>
 
                 <p className="text-xs leading-relaxed text-slate-600">
-                  Systemet skapar ett onboardingflöde och kopierar checklistan
-                  från det valda programmet. Den anställde kan börja följa
-                  checklistan från startdatumet.
+                  Systemet skapar ett onboardingflöde och tilldelar det innehåll
+                  du valt ovan. Den anställde kan börja följa innehållet från
+                  startdatumet.
                 </p>
               </div>
 
@@ -217,7 +293,7 @@ export default function AssignOnboarding() {
               <p className="text-xs text-slate-500">
                 {canStart
                   ? "Redo att starta onboarding för vald anställd."
-                  : "Välj nyanställd, program och startdatum för att kunna starta onboarding."}
+                  : "Välj nyanställd, program, startdatum och minst ett innehåll att tilldela."}
               </p>
             </CardContent>
           </Card>
@@ -316,7 +392,58 @@ export default function AssignOnboarding() {
             </CardContent>
           </Card>
 
-          
+          <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/70 px-5 py-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                  <Sparkles className="h-3.5 w-3.5" />
+                </div>
+
+                <h3 className="text-sm font-semibold text-slate-900">Quiz</h3>
+              </div>
+            </div>
+
+            <CardContent className="p-4">
+              {!selectedProgramId ? (
+                <EmptyStateBox
+                  title="Inget program valt"
+                  description="Välj ett program för att se om det finns quiz."
+                />
+              ) : loadingQuiz ? (
+                <div className="text-sm text-slate-500">
+                  Hämtar quiz för valt program…
+                </div>
+              ) : quizError ? (
+                <div className="text-sm text-red-600">{quizError}</div>
+              ) : latestQuiz ? (
+                <div className="rounded-xl border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4">
+                  <div className="text-sm font-semibold text-slate-900">
+                    {latestQuiz.quiz?.title || "Quiz"}
+                  </div>
+
+                  <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                    {latestQuiz.quiz?.description ||
+                      "Quizet kommer tilldelas om du väljer att inkludera det."}
+                  </p>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                      {latestQuiz.quiz?.questions?.length || 0} frågor
+                    </span>
+
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                      {latestQuiz.meta?.language || "sv"}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <EmptyStateBox
+                  title="Inget quiz i programmet"
+                  description="Det finns inget genererat quiz för detta program ännu."
+                />
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

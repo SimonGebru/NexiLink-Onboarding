@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchPrograms } from "../../../services/programService";
 import { fetchEmployees } from "../../../services/employeeService";
 import { createOnboarding } from "../../../services/onboardingService";
+import { fetchLatestProgramQuiz } from "../../../services/aiquiz";
 
 export function useAssignOnboarding() {
   const navigate = useNavigate();
@@ -14,6 +15,12 @@ export function useAssignOnboarding() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
   const [selectedProgramId, setSelectedProgramId] = useState("");
   const [startDate, setStartDate] = useState("");
+
+  const [latestQuiz, setLatestQuiz] = useState(null);
+  const [loadingQuiz, setLoadingQuiz] = useState(false);
+  const [quizError, setQuizError] = useState("");
+  const [includeQuiz, setIncludeQuiz] = useState(false);
+  const [includeChecklist, setIncludeChecklist] = useState(true);
 
   const [loadingLists, setLoadingLists] = useState(true);
   const [listError, setListError] = useState("");
@@ -41,11 +48,10 @@ export function useAssignOnboarding() {
 
         setPrograms(Array.isArray(programList) ? programList : []);
 
-        // filtrera bort inaktiva, eftersom backend kräver active !== false
         setEmployees(
           Array.isArray(employeeList)
-            ? employeeList.filter((e) => e.active !== false)
-            : []
+            ? employeeList.filter((employee) => employee.active !== false)
+            : [],
         );
       } catch (err) {
         if (!alive) return;
@@ -57,22 +63,76 @@ export function useAssignOnboarding() {
     }
 
     load();
+
     return () => {
       alive = false;
     };
   }, []);
 
+  useEffect(() => {
+    let alive = true;
+
+    async function loadQuizForProgram() {
+      if (!selectedProgramId) {
+        setLatestQuiz(null);
+        setIncludeQuiz(false);
+        setQuizError("");
+        return;
+      }
+
+      try {
+        setLoadingQuiz(true);
+        setQuizError("");
+
+        const res = await fetchLatestProgramQuiz(selectedProgramId);
+
+        if (!alive) return;
+
+        const quiz = res?.quiz || null;
+
+        setLatestQuiz(quiz);
+        setIncludeQuiz(Boolean(quiz?._id));
+      } catch (err) {
+        if (!alive) return;
+
+        setLatestQuiz(null);
+        setIncludeQuiz(false);
+        setQuizError(err?.message || "Kunde inte hämta quiz för programmet.");
+      } finally {
+        if (!alive) return;
+        setLoadingQuiz(false);
+      }
+    }
+
+    loadQuizForProgram();
+
+    return () => {
+      alive = false;
+    };
+  }, [selectedProgramId]);
+
   const selectedEmployee = useMemo(
-    () => employees.find((e) => e._id === selectedEmployeeId) || null,
-    [employees, selectedEmployeeId]
+    () => employees.find((employee) => employee._id === selectedEmployeeId) || null,
+    [employees, selectedEmployeeId],
   );
 
   const selectedProgram = useMemo(
-    () => programs.find((p) => p._id === selectedProgramId) || null,
-    [programs, selectedProgramId]
+    () => programs.find((program) => program._id === selectedProgramId) || null,
+    [programs, selectedProgramId],
   );
 
-  const canStart = Boolean(selectedEmployeeId && selectedProgramId && startDate);
+  const programHasChecklist =
+    Array.isArray(selectedProgram?.checklistTemplate) &&
+    selectedProgram.checklistTemplate.length > 0;
+
+  const programHasQuiz = Boolean(latestQuiz?._id);
+
+  const canStart = Boolean(
+    selectedEmployeeId &&
+      selectedProgramId &&
+      startDate &&
+      (includeChecklist || includeQuiz),
+  );
 
   async function handleStart() {
     if (!canStart || submitting) return;
@@ -81,11 +141,20 @@ export function useAssignOnboarding() {
       setSubmitting(true);
       setSubmitError("");
 
-      const res = await createOnboarding({
+      const payload = {
         employeeId: selectedEmployeeId,
         programId: selectedProgramId,
         startDate,
-      });
+      };
+
+      if (includeQuiz && latestQuiz?._id) {
+        payload.quizId = latestQuiz._id;
+      }
+
+      // Detta skickas med redan nu, men kräver backend-stöd om ni vill tillåta "bara quiz".
+      payload.includeChecklist = includeChecklist;
+
+      const res = await createOnboarding(payload);
 
       setCreatedOnboarding(res?.onboarding || null);
       setProgress(res?.progress || { total: 0, done: 0, percent: 0 });
@@ -100,13 +169,11 @@ export function useAssignOnboarding() {
   }
 
   return {
-    // lists
     employees,
     programs,
     loadingLists,
     listError,
 
-    // selections
     selectedEmployeeId,
     setSelectedEmployeeId,
     selectedProgramId,
@@ -117,13 +184,21 @@ export function useAssignOnboarding() {
     selectedEmployee,
     selectedProgram,
 
-    // submit
+    latestQuiz,
+    loadingQuiz,
+    quizError,
+    includeQuiz,
+    setIncludeQuiz,
+    includeChecklist,
+    setIncludeChecklist,
+    programHasChecklist,
+    programHasQuiz,
+
     canStart,
     submitting,
     submitError,
     handleStart,
 
-    // created
     createdOnboarding,
     progress,
   };

@@ -9,3 +9,9 @@ export function generateProgramQuiz(
     body: JSON.stringify({ materialIds, questionCount, language, force }),
   });
 }
+
+export function fetchLatestProgramQuiz(programId) {
+  return apiRequest(`/api/programs/${programId}/quiz`, {
+    method: "GET",
+  });
+}
