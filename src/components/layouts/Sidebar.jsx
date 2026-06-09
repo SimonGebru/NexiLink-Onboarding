@@ -5,7 +5,8 @@ import {
   Users,
   X,
   Settings,
-  MessageCircle
+  MessageCircle,
+  BookOpen,
 } from "lucide-react";
 
 import { getUser } from "../../auth/auth";
@@ -28,7 +29,12 @@ const getLinkClass = ({ isActive }) =>
 function AdminNavItems({ onNavigate }) {
   return (
     <nav className="mt-6 space-y-2">
-      <NavLink to="/dashboard" end className={getLinkClass} onClick={onNavigate}>
+      <NavLink
+        to="/dashboard"
+        end
+        className={getLinkClass}
+        onClick={onNavigate}
+      >
         <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-200 group-hover:bg-white transition-colors">
           <LayoutDashboard className="h-4 w-4" />
         </div>
@@ -85,15 +91,18 @@ function EmployeeNavItems({ onNavigate }) {
         <span>Mina onboardings</span>
       </NavLink>
 
-       <NavLink
-        to="/my/Inbox"
-        className={getLinkClass}
-        onClick={onNavigate}
-      >
+      <NavLink to="/my/Inbox" className={getLinkClass} onClick={onNavigate}>
         <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-200 group-hover:bg-white transition-colors">
           <ClipboardList className="h-4 w-4" />
         </div>
         <span>Meddelanden</span>
+      </NavLink>
+
+      <NavLink to="/my/quizzes" className={getLinkClass} onClick={onNavigate}>
+        <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-slate-50 border border-slate-200 group-hover:bg-white transition-colors">
+          <BookOpen className="h-4 w-4" />
+        </div>
+        <span>Quiz</span>
       </NavLink>
     </nav>
   );

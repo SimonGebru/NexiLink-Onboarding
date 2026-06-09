@@ -22,8 +22,9 @@ function normalizeOnboarding(raw) {
   const status = raw.status ?? raw.overallStatus ?? "Ej startad";
   const startDate = raw.startDate ?? raw.createdAt ?? null;
   const progress = normalizeProgress(raw.progress);
+  const assignedQuiz = raw.assignedQuiz ?? null;
 
-  return { id, programName, status, startDate, progress };
+  return { id, programName, status, startDate, progress, assignedQuiz };
 }
 
 function sortOnboardings(items = []) {

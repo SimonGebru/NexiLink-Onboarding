@@ -147,6 +147,37 @@ export default function UserDashboard() {
             </CardContent>
           </Card>
 
+          {activeOnboarding?.assignedQuiz && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Quiz</CardTitle>
+                <CardDescription>
+                  Quiz som tillhör din onboarding.
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent>
+                {activeOnboarding.assignedQuiz.status === "passed" ? (
+                  <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                    Godkänt!
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-sm text-slate-500">
+                      Testa dina kunskaper i detta quiz.
+                    </p>
+                    <Link
+                      to={`/my/quiz/${activeOnboarding.id}/quiz`}
+                      className="inline-block w-full rounded-md bg-[#1A4D4F] px-4 py-2 text-center text-sm font-medium text-white hover:bg-opacity-90 transition-colors"
+                    >
+                      Starta Quiz
+                    </Link>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Nästa uppgifter */}
           <Card>
             <CardHeader>

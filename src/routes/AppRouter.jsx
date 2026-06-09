@@ -13,6 +13,8 @@ import QuizBuilder from "../pages/QuizBuilder.jsx";
 import OnboardingDetails from "../pages/OnboardingDetails";
 import Employees from "../pages/Employees";
 import AcceptInvite from "../pages/AcceptInvite.jsx";
+import TakeQuiz from "../pages/TakeQuiz.jsx"
+import MyQuizzes from "../pages/MyQuizzes.jsx"; 
 
 import UserOnboarding from "../pages/MyOnboardings.jsx";
 import UserOnboardingDetails from "../pages/UserOnboardingDetails";
@@ -128,6 +130,8 @@ export default function AppRouter() {
             element={<UserOnboardingDetails />}
           />
           <Route path="/my/inbox" element={<Inbox />} />
+          <Route path="/my/quiz/:id/quiz" element={<TakeQuiz />} />
+          <Route path="/my/quizzes" element={<MyQuizzes />} />
         </Route>
       </Route>
 
