@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { fetchPrograms } from "../../../services/programService";
 import { fetchEmployees } from "../../../services/employeeService";
 import { createOnboarding } from "../../../services/onboardingService";
+import { fetchLatestProgramQuiz } from "../../../services/aiQuiz";
 
 export function useAssignOnboarding() {
   const navigate = useNavigate();
@@ -15,6 +16,8 @@ export function useAssignOnboarding() {
   const [selectedProgramId, setSelectedProgramId] = useState("");
   const [startDate, setStartDate] = useState("");
 
+  const [latestQuiz, setLatestQuiz] = useState(null);
+
   const [loadingLists, setLoadingLists] = useState(true);
   const [listError, setListError] = useState("");
 
@@ -22,7 +25,11 @@ export function useAssignOnboarding() {
   const [submitError, setSubmitError] = useState("");
 
   const [createdOnboarding, setCreatedOnboarding] = useState(null);
-  const [progress, setProgress] = useState({ total: 0, done: 0, percent: 0 });
+  const [progress, setProgress] = useState({
+    total: 0,
+    done: 0,
+    percent: 0,
+  });
 
   useEffect(() => {
     let alive = true;
@@ -41,7 +48,6 @@ export function useAssignOnboarding() {
 
         setPrograms(Array.isArray(programList) ? programList : []);
 
-        // filtrera bort inaktiva, eftersom backend kräver active !== false
         setEmployees(
           Array.isArray(employeeList)
             ? employeeList.filter((e) => e.active !== false)
@@ -57,10 +63,40 @@ export function useAssignOnboarding() {
     }
 
     load();
+
     return () => {
       alive = false;
     };
   }, []);
+
+  useEffect(() => {
+    let alive = true;
+
+    async function loadQuiz() {
+      if (!selectedProgramId) {
+        setLatestQuiz(null);
+        return;
+      }
+
+      try {
+        const res = await fetchLatestProgramQuiz(selectedProgramId);
+
+        if (!alive) return;
+
+        setLatestQuiz(res?.quiz || null);
+      } catch (err) {
+        if (!alive) return;
+
+        setLatestQuiz(null);
+      }
+    }
+
+    loadQuiz();
+
+    return () => {
+      alive = false;
+    };
+  }, [selectedProgramId]);
 
   const selectedEmployee = useMemo(
     () => employees.find((e) => e._id === selectedEmployeeId) || null,
@@ -72,7 +108,11 @@ export function useAssignOnboarding() {
     [programs, selectedProgramId]
   );
 
-  const canStart = Boolean(selectedEmployeeId && selectedProgramId && startDate);
+  const canStart = Boolean(
+    selectedEmployeeId &&
+      selectedProgramId &&
+      startDate
+  );
 
   async function handleStart() {
     if (!canStart || submitting) return;
@@ -85,13 +125,24 @@ export function useAssignOnboarding() {
         employeeId: selectedEmployeeId,
         programId: selectedProgramId,
         startDate,
+        quizId: latestQuiz?._id || undefined,
       });
 
       setCreatedOnboarding(res?.onboarding || null);
-      setProgress(res?.progress || { total: 0, done: 0, percent: 0 });
+
+      setProgress(
+        res?.progress || {
+          total: 0,
+          done: 0,
+          percent: 0,
+        }
+      );
 
       const onboardingId = res?.onboarding?._id;
-      if (onboardingId) navigate(`/onboardings/${onboardingId}`);
+
+      if (onboardingId) {
+        navigate(`/onboardings/${onboardingId}`);
+      }
     } catch (err) {
       setSubmitError(err?.message || "Kunde inte starta onboarding.");
     } finally {
@@ -100,30 +151,31 @@ export function useAssignOnboarding() {
   }
 
   return {
-    // lists
     employees,
     programs,
+
     loadingLists,
     listError,
 
-    // selections
     selectedEmployeeId,
     setSelectedEmployeeId,
+
     selectedProgramId,
     setSelectedProgramId,
+
     startDate,
     setStartDate,
 
     selectedEmployee,
     selectedProgram,
 
-    // submit
+    latestQuiz,
+
     canStart,
     submitting,
     submitError,
     handleStart,
 
-    // created
     createdOnboarding,
     progress,
   };

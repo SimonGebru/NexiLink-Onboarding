@@ -3,16 +3,13 @@ import {
   ArrowLeft,
   Calendar,
   ClipboardList,
-  Sparkles,
+  HelpCircle,
   User,
   UserPlus,
 } from "lucide-react";
 
 import {
   Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
   CardContent,
 } from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -21,7 +18,6 @@ import { FormField, Select, Input } from "../components/ui/Form";
 import ProgressBar from "../features/assignOnboarding/components/ProgressBar";
 import TaskCard from "../features/assignOnboarding/components/TaskCard";
 import EmptyStateBox from "../features/assignOnboarding/components/EmptyStateBox";
-import NotesBox from "../features/assignOnboarding/components/NotesBox";
 import ProgramPreviewList from "../features/assignOnboarding/components/ProgramPreviewList";
 
 import { useAssignOnboarding } from "../features/assignOnboarding/hooks/useAssignOnboarding";
@@ -53,6 +49,8 @@ export default function AssignOnboarding() {
 
     selectedEmployee,
     selectedProgram,
+
+    latestQuiz,
 
     canStart,
     submitting,
@@ -110,8 +108,6 @@ export default function AssignOnboarding() {
             <span className="h-1 w-1 rounded-full bg-slate-300" />
             <span className="text-slate-500">{summaryDate}</span>
           </div>
-
-          
         </div>
 
         {listError ? (
@@ -154,6 +150,7 @@ export default function AssignOnboarding() {
                   <option value="" disabled>
                     {loadingLists ? "Hämtar..." : "Välj en anställd"}
                   </option>
+
                   {employees.map((employee) => (
                     <option key={employee._id} value={employee._id}>
                       {employee.fullName} ({employee.jobTitle})
@@ -172,6 +169,7 @@ export default function AssignOnboarding() {
                   <option value="" disabled>
                     {loadingLists ? "Hämtar..." : "Välj ett program"}
                   </option>
+
                   {programs.map((program) => (
                     <option key={program._id} value={program._id}>
                       {program.name}
@@ -196,8 +194,8 @@ export default function AssignOnboarding() {
 
                 <p className="text-xs leading-relaxed text-slate-600">
                   Systemet skapar ett onboardingflöde och kopierar checklistan
-                  från det valda programmet. Den anställde kan börja följa
-                  checklistan från startdatumet.
+                  från det valda programmet. Om programmet har ett quiz kopplas
+                  även quizet till den anställdes onboarding.
                 </p>
               </div>
 
@@ -316,7 +314,60 @@ export default function AssignOnboarding() {
             </CardContent>
           </Card>
 
-          
+          <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50/70 px-5 py-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+                  <HelpCircle className="h-3.5 w-3.5" />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-slate-900">Quiz</h3>
+
+                  {latestQuiz ? (
+                    <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500">
+                      {latestQuiz.quiz?.questions?.length || 0} frågor
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            <CardContent className="p-4">
+              {!selectedProgramId ? (
+                <EmptyStateBox
+                  title="Inget program valt"
+                  description="Välj ett program för att se om det finns ett quiz."
+                />
+              ) : latestQuiz ? (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <h4 className="font-semibold text-slate-900">
+                    {latestQuiz.quiz?.title || "Quiz"}
+                  </h4>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    {latestQuiz.quiz?.description ||
+                      "Quiz kopplat till detta program."}
+                  </p>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                      {latestQuiz.quiz?.questions?.length || 0} frågor
+                    </span>
+
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                      Kopplas automatiskt
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <EmptyStateBox
+                  title="Inget quiz i programmet"
+                  description="Det finns inget genererat quiz för detta program ännu."
+                />
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
